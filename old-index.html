@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Screening Jantung</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <style>
+        :root {
+            --primary: #0056b3;
+            --bg: #f4f7f6;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 0;
+        }
+
+        .header {
+            background: var(--primary);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            background: #ddd;
+        }
+
+        .nav button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            font-size: 16px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .nav button.active {
+            background: white;
+            border-bottom: 3px solid var(--primary);
+            color: var(--primary);
+        }
+
+        .container {
+            padding: 20px;
+            max-width: 800px;
+            margin: auto;
+            background: white;
+            min-height: 100vh;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        button.btn {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        button.btn:disabled {
+            background: #aaa;
+        }
+
+        .status-bar {
+            text-align: center;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .offline {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .online {
+            background: #28a745;
+            color: white;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        #reader {
+            width: 100%;
+            max-width: 500px;
+            margin: auto;
+        }
+
+        .search-results {
+            border: 1px solid #ccc;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            background: white;
+            position: absolute;
+            width: calc(100% - 40px);
+            z-index: 10;
+        }
+
+        .search-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .search-item:hover {
+            background: #f0f0f0;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h2 style="margin: 0;">Screening Jantung Anak</h2>
+    </div>
+
+    <div id="statusBar" class="status-bar online">Memeriksa koneksi...</div>
+
+    <div class="nav">
+        <button id="tab-registrasi" class="active" onclick="switchTab('registrasi')">Registrasi</button>
+        <button id="tab-screening" onclick="switchTab('screening')">Screening Dokter</button>
+    </div>
+
+    <div class="container">
+        <div id="registrasi" class="section active">
+            <div class="form-group">
+                <label>Lokasi Pemeriksaan Hari Ini:</label>
+                <div style="display: flex; gap: 10px;">
+                    <select id="lokasi" required style="flex: 1;">
+                        <option value="">Pilih Lokasi...</option>
+                    </select>
+                    <button type="button" class="btn" style="width: auto; margin-top: 0; background: #28a745;"
+                        onclick="tambahLokasiBaru()">+ Tambah</button>
+                </div>
+            </div>
+
+            <hr>
+            <h3>Data Pasien</h3>
+            <div class="form-group" style="position: relative;">
+                <label>Cari Data (Ketik Nama / NIK):</label>
+                <input type="text" id="searchInput" placeholder="Ketik untuk mencari data yang sudah ada..."
+                    autocomplete="off">
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <form id="regForm" onsubmit="submitRegistration(event)">
+                <div class="grid-2">
+                    <div class="form-group"><label>NIK *</label><input type="text" id="nik" required></div>
+                    <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="nama" required></div>
+                    <div class="form-group">
+                        <label>Jenis Kelamin</label>
+                        <select id="jk" required>
+                            <option value="" disabled selected>Pilih...</option>
+                            <option value="L">Laki-laki</option>
+                            <option value="P">Perempuan</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="ttl"></div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group"><label>Nama Orang Tua</label><input type="text" id="ortu"></div>
+                    <div class="form-group"><label>No HP (Disarankan)</label><input type="tel" id="hp"></div>
+                    <div class="form-group"><label>Pekerjaan Orang Tua</label><input type="text" id="pekerjaan"></div>
+                </div>
+
+                <hr>
+                <h3>Pemeriksaan Fisik Dasar</h3>
+                <div class="grid-2">
+                    <div class="form-group"><label>Berat Badan (kg)</label><input type="number" step="0.1" id="bb">
+                    </div>
+                    <div class="form-group"><label>Tinggi Badan (cm)</label><input type="number" step="0.1" id="tb">
+                    </div>
+                    <div class="form-group"><label>Tekanan Darah</label><input type="text" id="td"
+                            placeholder="Contoh: 110/70"></div>
+                    <div class="form-group"><label>Heart Rate (bpm)</label><input type="number" id="hr"></div>
+                </div>
+
+                <hr>
+                <h3>Anamnesis Singkat</h3>
+                <div class="form-group"><label>Demam dalam 1 minggu terakhir?</label><select id="demam">
+                        <option value="Tidak">Tidak</option>
+                        <option value="Ya">Ya</option>
+                    </select></div>
+                <div class="form-group"><label>Sakit tenggorokan dalam 1 bulan terakhir?</label><select
+                        id="tenggorokan">
+                        <option value="Tidak">Tidak</option>
+                        <option value="Ya">Ya</option>
+                    </select></div>
+                <div class="form-group"><label>Mengkonsumsi obat rutin?</label><input type="text" id="obat"
+                        placeholder="Jika ada, sebutkan..."></div>
+                <div class="form-group"><label>Pernah dirawat di RS?</label><select id="rs">
+                        <option value="Tidak">Tidak</option>
+                        <option value="Ya">Ya</option>
+                    </select></div>
+
+                <button type="submit" class="btn" id="btnReg">Simpan & Cetak Barcode</button>
+            </form>
+        </div>
+
+        <div id="screening" class="section">
+            <h3 style="text-align:center;">Scan Barcode Pasien</h3>
+            <div id="reader"></div>
+
+            <div id="screeningResult"
+                style="display:none; margin-top:20px; padding:15px; border:1px solid #ccc; border-radius:5px;">
+                <h4>Data Ditemukan</h4>
+                <p>NIK: <strong id="scanNik">-</strong></p>
+                <div class="form-group">
+                    <label style="font-size:18px; color:#d9534f;">
+                        <input type="checkbox" id="isRedflag" style="width:20px; height:20px;"> Pasien ini REDFLAG
+                    </label>
+                </div>
+                <button class="btn" onclick="submitRedflag()">Simpan Hasil Screening</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
+</body>
+
+</html>

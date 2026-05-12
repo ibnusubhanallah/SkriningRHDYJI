@@ -57,6 +57,40 @@ function fetchLocations() {
         });
 }
 
+function tambahLokasiBaru() {
+    const newLoc = prompt("Masukkan nama lokasi/sekolah baru (contoh: SDN 4 Malang):");
+    
+    if (!newLoc || newLoc.trim() === "") return; // Batal jika kosong
+    
+    const locName = newLoc.trim();
+    
+    // 1. Tambahkan langsung ke dropdown agar bisa langsung dipakai
+    const select = document.getElementById('lokasi');
+    const option = document.createElement('option');
+    option.value = locName;
+    option.text = locName;
+    select.appendChild(option);
+    select.value = locName; // Otomatis memilih lokasi yang baru dibuat
+    
+    // 2. Simpan ke cache lokal agar tidak hilang saat direfresh offline
+    const cached = JSON.parse(localStorage.getItem('cachedLocations') || '[]');
+    cached.push([locName]);
+    localStorage.setItem('cachedLocations', JSON.stringify(cached));
+
+    // 3. Antrekan untuk dikirim ke Google Sheets
+    const payload = {
+        action: 'addLocation',
+        id: "loc_" + Date.now().toString(),
+        newLocation: locName
+    };
+    
+    saveToQueue(payload);
+    
+    if (!navigator.onLine) {
+        alert("Offline: Lokasi baru ditambahkan secara lokal dan akan diunggah ke server nanti.");
+    }
+}
+
 let searchTimeout;
 document.getElementById('searchInput').addEventListener('input', function() {
     clearTimeout(searchTimeout);

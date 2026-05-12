@@ -143,34 +143,6 @@ function fillForm(row) {
     document.getElementById('searchResults').style.display = 'none';
 }
 
-function submitRegistration(e) {
-    e.preventDefault();
-    const btn = document.getElementById('btnReg');
-    btn.disabled = true; btn.innerText = "Menyimpan...";
-
-    const payload = {
-        action: 'register', id: Date.now().toString(),
-        lokasi: document.getElementById('lokasi').value,
-        nik: document.getElementById('nik').value, nama: document.getElementById('nama').value,
-        jk: document.getElementById('jk').value, ttl: document.getElementById('ttl').value,
-        ortu: document.getElementById('ortu').value, hp: document.getElementById('hp').value,
-        pekerjaan: document.getElementById('pekerjaan').value, bb: document.getElementById('bb').value,
-        tb: document.getElementById('tb').value, td: document.getElementById('td').value,
-        hr: document.getElementById('hr').value, demam: document.getElementById('demam').value,
-        tenggorokan: document.getElementById('tenggorokan').value, obat: document.getElementById('obat').value,
-        rs: document.getElementById('rs').value
-    };
-
-    saveToQueue(payload);
-    printBarcode(payload.nik, payload.nama);
-    
-    setTimeout(() => {
-        document.getElementById('regForm').reset();
-        btn.disabled = false; btn.innerText = "Simpan & Cetak Barcode";
-        alert("Data tersimpan dan antre untuk dikirim.");
-    }, 1000);
-}
-
 function printBarcode(nik, nama) {
     const printWindow = window.open('', '_blank', 'width=350,height=400');
     printWindow.document.write(`
@@ -190,40 +162,34 @@ function printBarcode(nik, nama) {
 let html5QrCode;
 
 async function initScanner() {
-    // Pastikan scanner lama mati sebelum membuat yang baru
-    await stopScanner();
+    await stopScanner(); // Bersihkan yang lama
     
-    const readerElement = document.getElementById("reader");
-    if (!readerElement) return;
-
     html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 120 } };
+    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
 
     try {
-        await html5QrCode.start(
-            { facingMode: "environment" }, 
-            config, 
-            (decodedText) => {
-                document.getElementById('scanNik').innerText = decodedText;
-                document.getElementById('screeningResult').style.display = "block";
-                document.getElementById('isRedflag').checked = false;
-                stopScanner(); // Langsung matikan kamera setelah berhasil scan
-            }
-        );
+        await html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
+            document.getElementById('scanNik').innerText = decodedText;
+            document.getElementById('screeningResult').style.display = "block";
+            stopScanner(); // Matikan setelah dapet NIK
+        });
     } catch (err) {
-        console.warn("Gagal menyalakan kamera:", err);
+        console.warn("Kamera gagal:");
     }
 }
 
+// --- PERBAIKAN KAMERA (RESTART LOGIC) ---
 async function stopScanner() {
-    if (html5QrCode && html5QrCode.isScanning) {
+    if (html5QrCode) {
         try {
-            await html5QrCode.stop();
-            await html5QrCode.clear(); // Bersihkan elemen dari DOM
+            if (html5QrCode.isScanning) {
+                await html5QrCode.stop();
+            }
+            // Penting: Hapus elemen agar bisa di-init ulang tanpa konflik
+            document.getElementById("reader").innerHTML = ""; 
             html5QrCode = null;
-            console.log("Kamera dinonaktifkan.");
         } catch (err) {
-            console.error("Gagal menghentikan scanner:", err);
+            console.error("Gagal stop kamera:", err);
         }
     }
 }
@@ -250,28 +216,34 @@ function saveToQueue(payload) {
     if(navigator.onLine) syncData();
 }
 
-function syncData() {
-    if(!GAS_URL || !db) return;
+// --- PERBAIKAN DOUBLE INPUT & SYNC ---
+async function syncData() {
+    if(!GAS_URL || !db || !navigator.onLine) return;
+    
     const tx = db.transaction("syncQueue", "readwrite");
     const store = tx.objectStore("syncQueue");
-    const req = store.getAll();
+    const allRecords = await new Promise(resolve => {
+        const req = store.getAll();
+        req.onsuccess = () => resolve(req.result);
+    });
 
-    req.onsuccess = () => {
-        const queue = req.result;
-        if(queue.length === 0) return;
-        
-        document.getElementById('statusBar').innerText = `Sinkronisasi ${queue.length} data...`;
-        
-        // Kirim satu per satu agar lebih aman
-        queue.forEach(item => {
-            fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(item) })
-            .then(() => {
-                // Hapus dari IDB jika berhasil
-                const delTx = db.transaction("syncQueue", "readwrite");
-                delTx.objectStore("syncQueue").clear(); // Simplified for now, clears all after sync try
+    if(allRecords.length === 0) return;
+
+    for (const item of allRecords) {
+        try {
+            // Gunakan fetch biasa tanpa no-cors jika memungkinkan untuk cek status
+            await fetch(GAS_URL, { 
+                method: "POST", 
+                body: JSON.stringify(item) 
             });
-        });
-        
-        setTimeout(() => updateNetworkStatus(), 2000);
-    };
+            
+            // Hapus item spesifik setelah berhasil terkirim
+            const delTx = db.transaction("syncQueue", "readwrite");
+            delTx.objectStore("syncQueue").delete(item.internal_id); 
+        } catch (e) {
+            console.error("Gagal sync 1 item, berhenti.", e);
+            break; // Berhenti jika gagal koneksi
+        }
+    }
+    updateNetworkStatus();
 }

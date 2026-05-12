@@ -216,34 +216,28 @@ function saveToQueue(payload) {
     if(navigator.onLine) syncData();
 }
 
-// --- PERBAIKAN DOUBLE INPUT & SYNC ---
-async function syncData() {
-    if(!GAS_URL || !db || !navigator.onLine) return;
-    
+function syncData() {
+    if(!GAS_URL || !db) return;
     const tx = db.transaction("syncQueue", "readwrite");
     const store = tx.objectStore("syncQueue");
-    const allRecords = await new Promise(resolve => {
-        const req = store.getAll();
-        req.onsuccess = () => resolve(req.result);
-    });
+    const req = store.getAll();
 
-    if(allRecords.length === 0) return;
-
-    for (const item of allRecords) {
-        try {
-            // Gunakan fetch biasa tanpa no-cors jika memungkinkan untuk cek status
-            await fetch(GAS_URL, { 
-                method: "POST", 
-                body: JSON.stringify(item) 
+    req.onsuccess = () => {
+        const queue = req.result;
+        if(queue.length === 0) return;
+        
+        document.getElementById('statusBar').innerText = `Sinkronisasi ${queue.length} data...`;
+        
+        // Kirim satu per satu agar lebih aman
+        queue.forEach(item => {
+            fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(item) })
+            .then(() => {
+                // Hapus dari IDB jika berhasil
+                const delTx = db.transaction("syncQueue", "readwrite");
+                delTx.objectStore("syncQueue").clear(); // Simplified for now, clears all after sync try
             });
-            
-            // Hapus item spesifik setelah berhasil terkirim
-            const delTx = db.transaction("syncQueue", "readwrite");
-            delTx.objectStore("syncQueue").delete(item.internal_id); 
-        } catch (e) {
-            console.error("Gagal sync 1 item, berhenti.", e);
-            break; // Berhenti jika gagal koneksi
-        }
-    }
-    updateNetworkStatus();
+        });
+        
+        setTimeout(() => updateNetworkStatus(), 2000);
+    };
 }

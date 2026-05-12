@@ -94,7 +94,7 @@ function tambahLokasiBaru() {
     select.value = locName;
 
     // Simpan ke antrean
-    addToQueue({ action: 'addLocation', newLocation: locName });
+    addToQueue({ action: 'addLocation', internal_id: Date.now(), newLocation: locName });
 }
 
 // --- SEARCH LOGIC ---

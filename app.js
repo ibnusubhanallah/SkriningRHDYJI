@@ -21,8 +21,26 @@ function switchTab(tabId) {
     document.getElementById(tabId).classList.add('active');
     document.getElementById('tab-' + tabId).classList.add('active');
     
-    if(tabId === 'screening' && !html5QrCode) initScanner();
+    if (tabId === 'screening') {
+        initScanner(); // Nyalakan kamera jika ke tab screening
+    } else {
+        stopScanner(); // Matikan kamera jika pindah ke tab registrasi
+    }
 }
+
+// Deteksi jika browser diminimalkan atau ganti aplikasi (Window Away)
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+        console.log("Aplikasi di latar belakang, mematikan kamera...");
+        stopScanner();
+    } else {
+        // Jika kembali aktif dan sedang di tab screening, nyalakan lagi
+        const activeTab = document.querySelector('.nav button.active').id;
+        if (activeTab === 'tab-screening') {
+            initScanner();
+        }
+    }
+});
 
 function updateNetworkStatus() {
     const bar = document.getElementById('statusBar');
@@ -170,15 +188,44 @@ function printBarcode(nik, nama) {
 
 // --- SCREENING SCANNER ---
 let html5QrCode;
-function initScanner() {
+
+async function initScanner() {
+    // Pastikan scanner lama mati sebelum membuat yang baru
+    await stopScanner();
+    
+    const readerElement = document.getElementById("reader");
+    if (!readerElement) return;
+
     html5QrCode = new Html5Qrcode("reader");
-    const config = { fps: 10, qrbox: { width: 250, height: 100 } }; // Bentuk persegi panjang untuk barcode 1D
-    html5QrCode.start({ facingMode: "environment" }, config, (decodedText) => {
-        document.getElementById('scanNik').innerText = decodedText;
-        document.getElementById('screeningResult').style.display = "block";
-        document.getElementById('isRedflag').checked = false;
-        html5QrCode.pause(); // Pause scanner saat form terbuka
-    }).catch(err => console.log("Camera access denied or error"));
+    const config = { fps: 10, qrbox: { width: 250, height: 120 } };
+
+    try {
+        await html5QrCode.start(
+            { facingMode: "environment" }, 
+            config, 
+            (decodedText) => {
+                document.getElementById('scanNik').innerText = decodedText;
+                document.getElementById('screeningResult').style.display = "block";
+                document.getElementById('isRedflag').checked = false;
+                stopScanner(); // Langsung matikan kamera setelah berhasil scan
+            }
+        );
+    } catch (err) {
+        console.warn("Gagal menyalakan kamera:", err);
+    }
+}
+
+async function stopScanner() {
+    if (html5QrCode && html5QrCode.isScanning) {
+        try {
+            await html5QrCode.stop();
+            await html5QrCode.clear(); // Bersihkan elemen dari DOM
+            html5QrCode = null;
+            console.log("Kamera dinonaktifkan.");
+        } catch (err) {
+            console.error("Gagal menghentikan scanner:", err);
+        }
+    }
 }
 
 function submitRedflag() {
@@ -191,7 +238,9 @@ function submitRedflag() {
     
     document.getElementById('screeningResult').style.display = "none";
     alert("Hasil screening disimpan.");
-    html5QrCode.resume(); // Lanjut scan berikutnya
+    
+    // Setelah simpan, otomatis nyalakan scanner lagi untuk pasien berikutnya
+    initScanner(); 
 }
 
 // --- SYNC ENGINE ---

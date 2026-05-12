@@ -65,13 +65,13 @@ function fetchLocations() {
         .then(data => {
             const select = document.getElementById('lokasi');
             select.innerHTML = '<option value="">Pilih Lokasi...</option>';
-            data.forEach(loc => select.innerHTML += `<option value="${loc[0]}">${loc[0]}</option>`);
+            data.forEach(loc => select.innerHTML += `<option value="${loc}">${loc}</option>`);
             localStorage.setItem('cachedLocations', JSON.stringify(data));
         }).catch(err => {
             // Load from cache if fail
             const cached = JSON.parse(localStorage.getItem('cachedLocations') || '[]');
             const select = document.getElementById('lokasi');
-            cached.forEach(loc => select.innerHTML += `<option value="${loc[0]}">${loc[0]}</option>`);
+            cached.forEach(loc => select.innerHTML += `<option value="${loc}">${loc}</option>`);
         });
 }
 
@@ -92,7 +92,7 @@ function tambahLokasiBaru() {
     
     // 2. Simpan ke cache lokal agar tidak hilang saat direfresh offline
     const cached = JSON.parse(localStorage.getItem('cachedLocations') || '[]');
-    cached.push([locName]);
+    cached.push(locName);
     localStorage.setItem('cachedLocations', JSON.stringify(cached));
 
     // 3. Antrekan untuk dikirim ke Google Sheets

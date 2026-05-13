@@ -1,16 +1,30 @@
 let html5QrCode = new Html5Qrcode("reader");
-let currentScannedNik = "";
+let currentScanned = []; // Array untuk menyimpan hasil scan sementara (NIK dan Nama)
 
 // Inisialisasi: Load data dari LocalStorage saat web dibuka
 document.addEventListener("DOMContentLoaded", renderTable);
 
 function startScanner() {
-    const config = { fps: 10, qrbox: { width: 250, height: 150 } };
-    html5QrCode.start({ facingMode: "environment" }, config, (text) => {
-        currentScannedNik = text;
-        showModal(text);
-        stopScanner(); // Matikan kamera saat modal muncul agar tidak scan terus
-    }).catch(err => console.error("Kamera Error:", err));
+    const config = {
+        fps: 20,
+        qrbox: { width: 300, height: 150 },
+        aspectRatio: 1.0,
+        videoConstraints: {
+            facingMode: "environment",
+            focusMode: "continuous", // Coba aktifkan continuous focus jika didukung
+            width: { min: 640, ideal: 1280 },
+            height: { min: 480, ideal: 720 }
+        }
+    };
+    html5QrCode.start(
+        { facingMode: "environment" },
+        config,
+        (text) => {
+            currentScanned = text.split("_"); // Ambil NIK dari hasil scan (asumsi format "NIK|Nama")
+            showModal(currentScanned);
+            stopScanner(); // Matikan kamera saat modal muncul agar tidak scan terus
+            if (navigator.vibrate) navigator.vibrate(100); // Getarkan perangkat sebagai feedback
+        }).catch(err => console.error("Kamera Error:", err));
 }
 
 function stopScanner() {
@@ -19,8 +33,9 @@ function stopScanner() {
     }
 }
 
-function showModal(nik) {
-    document.getElementById('displayNik').innerText = "NIK: " + nik;
+function showModal(currentScanned) {
+    document.getElementById('displayNik').innerText = "NIK: " + currentScanned[0]; // Tampilkan NIK
+    document.getElementById('displayName').innerText = "Nama: " + currentScanned[1]; // Tampilkan Nama
     document.getElementById('checkRedflag').checked = false;
     document.getElementById('modalRedflag').style.display = "flex";
 }
@@ -35,7 +50,8 @@ function saveScreeningResult() {
     // 2. Tambah data baru
     history.unshift({
         time: timestamp,
-        nik: currentScannedNik,
+        nik: currentScanned[0], // Ambil NIK dari array hasil scan (karena format "NIK|Nama")
+        name: currentScanned[1], // Ambil Nama dari array hasil scan
         status: isRedflag
     });
 
@@ -45,7 +61,7 @@ function saveScreeningResult() {
     // 4. Update Tampilan & Reset
     renderTable();
     document.getElementById('modalRedflag').style.display = "none";
-    
+
     // 5. Jalankan kembali scanner untuk pasien berikutnya
     setTimeout(startScanner, 500);
 }
@@ -61,6 +77,7 @@ function renderTable() {
             <tr>
                 <td>${item.time}</td>
                 <td>${item.nik}</td>
+                <td>${item.name}</td>
                 <td>${badge}</td>
             </tr>
         `;
@@ -73,9 +90,9 @@ function copyToClipboard() {
     if (history.length === 0) return alert("Belum ada data untuk dicopy.");
 
     // Buat format Tab-Separated Values (TSV) agar pas masuk ke kolom GSheet
-    let tsvContent = "Waktu\tNIK\tStatus\n"; // Header
+    let tsvContent = "Waktu\tNIK\tNama\tStatus\n"; // Header
     history.forEach(item => {
-        tsvContent += `${item.time}\t${item.nik}\t${item.status}\n`;
+        tsvContent += `${item.time}\t${item.nik}\t${item.name}\t${item.status}\n`;
     });
 
     navigator.clipboard.writeText(tsvContent).then(() => {

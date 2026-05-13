@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Service</title>
+    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+    <style>
+        /* Pengaturan Ukuran Kertas Thermal 58mm */
+        @page {
+            size: 58mm auto;
+            margin: 0;
+        }
+        body { 
+            font-family: 'Courier New', Courier, monospace; 
+            width: 48mm; /* Area cetak bersih */
+            margin: 0 auto;
+            padding: 5mm 0;
+            text-align: center;
+            background: #fff;
+        }
+        .line { border-bottom: 1px dashed #000; margin: 5px 0; }
+        .data-row { text-align: left; font-size: 10px; margin: 2px 0; }
+        #barcodeCanvas { width: 100%; height: auto; }
+        
+        /* Sembunyikan UI saat print */
+        @media print {
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print">
+        <p>Sedang memproses cetakan...</p>
+        <p>Jika dialog print tidak muncul, klik tombol di bawah:</p>
+        <button onclick="window.print()">Print Manual</button>
+    </div>
+
+    <div id="printArea">
+        <h4 style="margin:0; font-size: 12px;">SCREENING JANTUNG</h4>
+        <div class="line"></div>
+        
+        <svg id="barcodeCanvas"></svg>
+        
+        <div class="data-row"><strong>NIK  :</strong> <span id="pNik"></span></div>
+        <div class="data-row"><strong>NAMA :</strong> <span id="pNama"></span></div>
+        <div class="data-row"><strong>JK   :</strong> <span id="pJk"></span></div>
+        <div class="data-row"><strong>TTL  :</strong> <span id="pTtl"></span></div>
+        
+        <div class="line"></div>
+        <p style="font-size: 8px;">Simpan struk ini untuk pemeriksaan dokter</p>
+    </div>
+
+    <script src="print.js"></script>
+</body>
+</html>

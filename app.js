@@ -8,12 +8,9 @@ function startScanner() {
     const config = {
         fps: 20,
         qrbox: { width: 300, height: 150 },
-        aspectRatio: 1.0,
         videoConstraints: {
             facingMode: "environment",
-            focusMode: "continuous", // Coba aktifkan continuous focus jika didukung
-            width: { min: 640, ideal: 1280 },
-            height: { min: 480, ideal: 720 }
+            focusMode: "continuous" // Coba aktifkan continuous focus jika didukung
         }
     };
     html5QrCode.start(

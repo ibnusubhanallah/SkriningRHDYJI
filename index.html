@@ -49,18 +49,20 @@
                 <strong>List Hasil Screening</strong>
                 <button class="btn btn-copy" onclick="copyToClipboard()">📋 Copy untuk GSheet</button>
             </div>
-            <table id="recapTable">
-                <thead>
-                    <tr>
-                        <th>Waktu</th>
-                        <th>NIK</th>
-                        <th>Nama</th>
-                        <th>Redflag?</th>
-                    </tr>
-                </thead>
-                <tbody id="recapBody">
-                    </tbody>
-            </table>
+            <div style="overflow-x: auto;">
+                <table id="recapTable">
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>NIK</th>
+                            <th>Nama</th>
+                            <th>Redflag?</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recapBody">
+                        </tbody>
+                </table>
+            </div>
             <br>
             <button class="btn btn-clear" onclick="clearHistory()">Reset/Hapus Semua Data</button>
         </div>

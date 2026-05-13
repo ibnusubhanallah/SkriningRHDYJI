@@ -34,7 +34,7 @@ if (urlParams.has('nik')) {
     document.getElementById('pTtl').innerText = ttlString;
 
     // --- GENERATE BARCODE ---
-    JsBarcode("#barcodeCanvas", nik, {
+    JsBarcode("#barcodeCanvas", nik+"_"+nama, {
         format: "CODE128",
         width: 2,
         height: 50,

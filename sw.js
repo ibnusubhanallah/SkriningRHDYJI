@@ -3,9 +3,11 @@ const ASSETS = [
     './',
     './index.html',
     './app.js',
+    './print.html',
+    './print.js',
     './manifest.json',
-    'https://unpkg.com/html5-qrcode',
-    'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js'
+    './html5-qrcode.min.js',
+    './JsBarcode.all.min.js'
 ];
 
 self.addEventListener('install', e => {

@@ -1,76 +1,100 @@
-const urlParams = new URLSearchParams(window.location.search);
-const GAS_URL = localStorage.getItem('GAS_URL') || urlParams.get('GAS_code');
-if (urlParams.get('GAS_code')) localStorage.setItem('GAS_URL', GAS_URL);
-
-// --- LOGIKA OTOMATIS CETAK ---
-if (urlParams.has('nik')) {
-    const nik = urlParams.get('nik');
-    const nama = urlParams.get('nama');
-    
-    // Tampilkan area print
-    document.getElementById('printArea').style.display = 'block';
-    document.getElementById('mainUI').style.display = 'none';
-    document.getElementById('pNik').innerText = nik;
-    document.getElementById('pNama').innerText = nama;
-
-    // Generate Barcode
-    JsBarcode("#barcodeCanvas", nik, {
-        format: "CODE128",
-        width: 2,
-        height: 50,
-        displayValue: false
-    });
-
-    // Pemicu Print & Auto Close
-    setTimeout(() => {
-        window.print();
-        // Mencoba menutup tab. Catatan: Browser hanya bisa menutup tab 
-        // yang dibuka lewat klik link (target="_blank")
-        window.close();
-        
-        // Jika window.close gagal (beberapa browser memblokir), 
-        // sediakan instruksi manual atau redirect balik.
-        setTimeout(() => {
-            alert("Selesai mencetak. Silakan kembali ke Google Sheets.");
-            window.history.back();
-        }, 500);
-    }, 500);
-}
-
-// --- LOGIKA SCAN REDFLAG (DOKTER) ---
 let html5QrCode = new Html5Qrcode("reader");
+let currentScannedNik = "";
+
+// Inisialisasi: Load data dari LocalStorage saat web dibuka
+document.addEventListener("DOMContentLoaded", renderTable);
 
 function startScanner() {
     const config = { fps: 10, qrbox: { width: 250, height: 150 } };
     html5QrCode.start({ facingMode: "environment" }, config, (text) => {
-        document.getElementById('scanNik').innerText = text;
-        document.getElementById('result').style.display = "block";
-        html5QrCode.pause();
+        currentScannedNik = text;
+        showModal(text);
+        stopScanner(); // Matikan kamera saat modal muncul agar tidak scan terus
+    }).catch(err => console.error("Kamera Error:", err));
+}
+
+function stopScanner() {
+    if (html5QrCode.isScanning) {
+        html5QrCode.stop();
+    }
+}
+
+function showModal(nik) {
+    document.getElementById('displayNik').innerText = "NIK: " + nik;
+    document.getElementById('checkRedflag').checked = false;
+    document.getElementById('modalRedflag').style.display = "flex";
+}
+
+function saveScreeningResult() {
+    const isRedflag = document.getElementById('checkRedflag').checked ? "REDFLAG" : "NORMAL";
+    const timestamp = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+
+    // 1. Ambil data lama dari LocalStorage
+    let history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+
+    // 2. Tambah data baru
+    history.unshift({
+        time: timestamp,
+        nik: currentScannedNik,
+        status: isRedflag
+    });
+
+    // 3. Simpan kembali ke LocalStorage
+    localStorage.setItem('screening_history', JSON.stringify(history));
+
+    // 4. Update Tampilan & Reset
+    renderTable();
+    document.getElementById('modalRedflag').style.display = "none";
+    
+    // 5. Jalankan kembali scanner untuk pasien berikutnya
+    setTimeout(startScanner, 500);
+}
+
+function renderTable() {
+    const history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+    const tbody = document.getElementById('recapBody');
+    tbody.innerHTML = "";
+
+    history.forEach(item => {
+        const badge = item.status === "REDFLAG" ? `<span class="redflag-label">REDFLAG</span>` : "Normal";
+        tbody.innerHTML += `
+            <tr>
+                <td>${item.time}</td>
+                <td>${item.nik}</td>
+                <td>${badge}</td>
+            </tr>
+        `;
     });
 }
 
-function submitRedflag() {
-    const payload = {
-        action: 'submitRedflag',
-        nik: document.getElementById('scanNik').innerText,
-        redflag: document.getElementById('isRedflag').checked ? "YA" : "TIDAK",
-        timestamp: new Date().toISOString()
-    };
+// FUNGSI COPY UNTUK GOOGLE SHEETS
+function copyToClipboard() {
+    const history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+    if (history.length === 0) return alert("Belum ada data untuk dicopy.");
 
-    if (navigator.onLine) {
-        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) })
-        .then(() => alert("Data Redflag Terkirim"));
-    } else {
-        // Simpan lokal jika offline (opsional, bisa pakai IndexedDB lagi)
-        alert("Offline: Data Redflag tersimpan di memori sementara.");
+    // Buat format Tab-Separated Values (TSV) agar pas masuk ke kolom GSheet
+    let tsvContent = "Waktu\tNIK\tStatus\n"; // Header
+    history.forEach(item => {
+        tsvContent += `${item.time}\t${item.nik}\t${item.status}\n`;
+    });
+
+    navigator.clipboard.writeText(tsvContent).then(() => {
+        alert("Data berhasil dicopy! Silakan buka Google Sheets dan tekan Ctrl+V di sel yang diinginkan.");
+    });
+}
+
+function clearHistory() {
+    if (confirm("Hapus semua rekap pemeriksaan hari ini?")) {
+        localStorage.removeItem('screening_history');
+        renderTable();
     }
-
-    document.getElementById('result').style.display = "none";
-    document.getElementById('isRedflag').checked = false;
-    html5QrCode.resume();
 }
 
-// Jalankan scanner jika bukan dalam mode print
-if (!urlParams.has('nik')) {
-    startScanner();
-}
+// Jalankan scanner otomatis saat start
+startScanner();
+
+// Matikan kamera jika tab tidak aktif (hemat baterai)
+document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopScanner();
+    else if (!document.getElementById('modalRedflag').style.display === "flex") startScanner();
+});

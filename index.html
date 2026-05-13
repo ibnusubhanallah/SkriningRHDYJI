@@ -3,46 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner & Print Service</title>
+    <title>Scanner Redflag Dokter</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://unpkg.com/html5-qrcode"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; background: #f4f7f6; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
-        #reader { width: 100%; border-radius: 10px; overflow: hidden; }
-        .btn { background: #0056b3; color: white; padding: 15px; border: none; border-radius: 5px; width: 100%; font-size: 16px; margin-top: 20px; cursor: pointer; }
-        #result { display: none; margin-top: 20px; padding: 15px; border: 1px solid #ccc; }
-        /* Style khusus untuk cetakan agar pas di printer thermal 58mm */
-        @media print {
-            body * { visibility: hidden; }
-            #printArea, #printArea * { visibility: visible; }
-            #printArea { position: absolute; left: 0; top: 0; width: 100%; }
+        :root { --primary: #0056b3; --danger: #dc3545; --success: #28a745; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        
+        /* Scanner Box */
+        #reader { width: 100%; border-radius: 12px; overflow: hidden; border: 2px solid #ddd; background: #000; }
+        
+        /* Modal Tanya Redflag */
+        #modalRedflag { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; 
         }
+        .modal-content { background: white; padding: 30px; border-radius: 15px; text-align: center; width: 80%; }
+
+        /* Rekap List */
+        .recap-section { margin-top: 30px; background: white; padding: 15px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border-bottom: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; }
+        .redflag-label { color: white; background: var(--danger); padding: 2px 6px; border-radius: 4px; font-weight: bold; font-size: 10px; }
+
+        /* Buttons */
+        .btn { padding: 12px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 14px; }
+        .btn-success { background: var(--success); color: white; width: 100%; margin-top: 10px; }
+        .btn-copy { background: var(--primary); color: white; margin-bottom: 10px; }
+        .btn-clear { background: #6c757d; color: white; font-size: 12px; }
+        .flex-between { display: flex; justify-content: space-between; align-items: center; }
     </style>
 </head>
 <body>
 
-    <div class="card" id="mainUI">
-        <h2>Menu Dokter: Scan Redflag</h2>
+    <div class="container">
+        <h3 style="text-align: center;">Menu Dokter: Scan Pasien</h3>
+        
         <div id="reader"></div>
-        <div id="result">
-            <p>Pasien: <strong id="scanNik">-</strong></p>
-            <label style="font-size: 20px; color: red; display: block; margin: 15px 0;">
-                <input type="checkbox" id="isRedflag" style="transform: scale(1.5);"> REDFLAG?
-            </label>
-            <button class="btn" onclick="submitRedflag()">Simpan Hasil</button>
+        <p style="text-align: center; color: #666; font-size: 12px;">Arahkan kamera ke barcode pada struk pasien</p>
+
+        <div class="recap-section">
+            <div class="flex-between">
+                <strong>List Hasil Screening</strong>
+                <button class="btn btn-copy" onclick="copyToClipboard()">📋 Copy untuk GSheet</button>
+            </div>
+            <table id="recapTable">
+                <thead>
+                    <tr>
+                        <th>Waktu</th>
+                        <th>NIK Pasien</th>
+                        <th>Redflag?</th>
+                    </tr>
+                </thead>
+                <tbody id="recapBody">
+                    </tbody>
+            </table>
+            <br>
+            <button class="btn btn-clear" onclick="clearHistory()">Reset/Hapus Semua Data</button>
         </div>
     </div>
 
-    <div id="printArea" style="display:none; text-align:center;">
-        <h3 style="margin:0; font-size: 14px;">SCREENING JANTUNG</h3>
-        <svg id="barcodeCanvas"></svg>
-        <p id="pNik" style="margin:0; font-weight:bold; font-size: 12px;"></p>
-        <p id="pNama" style="margin:0; font-size: 12px;"></p>
+    <div id="modalRedflag">
+        <div class="modal-content">
+            <h2 id="displayNik">NIK: 000000000</h2>
+            <p style="font-size: 18px;">Apakah pasien ini <strong>REDFLAG</strong>?</p>
+            <label style="font-size: 24px; display: block; margin: 20px 0; color: var(--danger);">
+                <input type="checkbox" id="checkRedflag" style="transform: scale(2);"> YA, REDFLAG
+            </label>
+            <button class="btn btn-success" onclick="saveScreeningResult()">SIMPAN & LANJUT</button>
+        </div>
     </div>
 
     <script src="app.js"></script>
-    <script>if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');</script>
 </body>
 </html>

@@ -36,25 +36,28 @@
         }
 
         /* Modal Tanya Redflag */
-        #modalRedflag {
+        .overlay {
             display: none;
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0, 0, 0, 0.85);
             z-index: 1000;
             justify-content: center;
             align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        .modal-content {
+        .modal {
             background: white;
-            padding: 30px;
-            border-radius: 15px;
+            padding: 20px;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
             text-align: center;
-            width: 80%;
         }
 
         /* Rekap List */
@@ -110,11 +113,13 @@
             margin-top: 10px;
         }
 
-        .btn-copy {
+        .btn-upload {
             background: var(--primary);
             color: white;
             margin-bottom: 10px;
         }
+
+        .btn-danger { background: var(--danger); color: white; }
 
         .btn-clear {
             background: #6c757d;
@@ -141,7 +146,7 @@
         <div class="recap-section">
             <div class="flex-between">
                 <strong>List Hasil Screening</strong>
-                <button class="btn btn-copy" onclick="copyToClipboard()">📋 Copy untuk GSheet</button>
+                <button class="btn btn-upload" id="btnGoToUpload" onclick="openUploadForm()">Upload Data ke Cloud</button>
             </div>
             <div style="overflow-x: auto;">
                 <table id="recapTable">
@@ -152,6 +157,7 @@
                             <th>Nama</th>
                             <th>Redflag?</th>
                             <th>Keterangan</th>
+                            <th>Aksi</th>
                         </tr>
                     </thead>
                     <tbody id="recapBody">
@@ -159,25 +165,44 @@
                 </table>
             </div>
             <br>
-            <button class="btn btn-clear" onclick="clearHistory()">Reset/Hapus Semua Data</button>
+            <button class="btn btn-clear" onclick="clearData()">Reset/Hapus Semua Data</button>
         </div>
     </div>
 
-    <div id="modalRedflag">
-        <div class="modal-content">
-            <h2 id="displayNik">NIK: 000000000</h2>
-            <h3 id="displayName">Nama: John Doe</h3>
-            <p style="font-size: 18px;">Apakah pasien ini <strong>REDFLAG</strong>?</p>
-            <label style="font-size: 24px; display: block; margin: 20px 0; color: var(--danger);">
-                <input type="checkbox" id="checkRedflag" style="transform: scale(2);"> YA, REDFLAG
+    <div id="modalEntry" class="overlay">
+        <div class="modal">
+            <h3 id="entryTitle">Input Baru</h3>
+            <p id="displayNik" style="font-weight:bold; color:var(--primary)"></p>
+            <p id="displayName" style="font-weight:normal; color:var(--primary)"></p>
+            <label style="color:var(--danger); font-weight:bold; display:block; margin:10px 0;">
+                <input type="checkbox" id="checkRedflag"> PASIEN REDFLAG
             </label>
-            <div style="margin-bottom: 20px; text-align: left;">
-                <label style="font-size: 14px; font-weight: bold;">Keterangan (Opsional):</label>
-                <textarea id="inputKeterangan" rows="3"
-                    style="width: 100%; border-radius: 5px; border: 1px solid #ccc; padding: 10px; box-sizing: border-box; font-family: inherit;"
-                    placeholder="Tulis keterangan di sini (tidak wajib)"></textarea>
-            </div>
-            <button class="btn btn-success" onclick="saveScreeningResult()">SIMPAN & LANJUT</button>
+            <textarea id="inputNote" placeholder="Keterangan klinis..."></textarea>
+            <button class="btn btn-success" onclick="saveToLocal()">Simpan Lokal</button>
+            <button class="btn" onclick="closeModal('modalEntry')">Batal</button>
+        </div>
+    </div>
+
+    <div id="modalUpload" class="overlay">
+        <div class="modal">
+            <h3>Konfirmasi Upload</h3>
+            <input type="text" id="doctorName" placeholder="Nama Dokter Pemeriksa">
+            <input type="text" id="accessCode" placeholder="Kode Akses">
+            <div id="uploadError" style="color:red; font-size:12px; margin-bottom:5px; display:none;"></div>
+            <button class="btn btn-upload" id="btnDoUpload" onclick="performUpload()">Mulai Upload Sekarang</button>
+            <button class="btn" onclick="closeModal('modalUpload')">Kembali</button>
+        </div>
+    </div>
+
+    <div id="modalVerify" class="overlay">
+        <div class="modal">
+            <h3>Upload Berhasil!</h3>
+            <p>Data telah diterima server. Silakan cek link di bawah ini:</p>
+            <a id="sheetLink" href="#" target="_blank" style="display:block; margin:15px 0; color:var(--primary); font-weight:bold;">BUKA GOOGLE SHEET</a>
+            <hr>
+            <p style="font-size:12px;">Apakah data sudah aman di Google Sheet?</p>
+            <button class="btn btn-success" onclick="clearData()">YA (Aman, Kosongkan Data Lokal)</button>
+            <button class="btn btn-danger" onclick="openUploadForm()">TIDAK (Upload Ulang)</button>
         </div>
     </div>
 

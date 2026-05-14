@@ -15,15 +15,17 @@ function startScanner() {
             focusMode: "continuous" // Coba aktifkan continuous focus jika didukung
         }
     };
-    html5QrCode.start(
-        { facingMode: "environment" },
-        config,
-        (text) => {
-            currentScanned = text.split("_"); // Ambil NIK dari hasil scan (asumsi format "NIK|Nama")
-            checkDuplicate(currentScanned);
-            stopScanner(); // Matikan kamera saat modal muncul agar tidak scan terus
-            if (navigator.vibrate) navigator.vibrate(100); // Getarkan perangkat sebagai feedback
-        }).catch(err => console.error("Kamera Error:", err));
+    if (!html5QrCode.isScanning) {
+        html5QrCode.start(
+            { facingMode: "environment" },
+            config,
+            (text) => {
+                currentScanned = text.split("_"); // Ambil NIK dari hasil scan (asumsi format "NIK|Nama")
+                checkDuplicate(currentScanned);
+                stopScanner(); // Matikan kamera saat modal muncul agar tidak scan terus
+                if (navigator.vibrate) navigator.vibrate(100); // Getarkan perangkat sebagai feedback
+            }).catch(err => console.error("Kamera Error:", err));
+    }
 }
 
 function stopScanner() {
@@ -152,7 +154,7 @@ function editManual(nik) {
 
 // --- UPLOAD FLOW ---
 function openUploadForm() {
-    closeModal('modalVerify');
+    document.getElementById('modalVerify').style.display = "none";
     document.getElementById('modalUpload').style.display = "flex";
     document.getElementById('uploadError').style.display = "none";
 }
@@ -200,7 +202,7 @@ function clearData() {
         renderTable();
         closeModal('modalVerify');
         alert("Data dibersihkan. Siap untuk sesi berikutnya.");
-        location.reload(); 
+        location.reload();
     }
 }
 

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Drive Folder Extractor</title>
+    <style>
+        :root { --primary: #0056b3; --success: #28a745; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; padding: 20px; margin: 0; }
+        .container { max-width: 700px; margin: auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h3 { margin-top: 0; color: #333; }
+        label { font-weight: bold; font-size: 14px; color: #555; display: block; margin-top: 15px; }
+        input, textarea { width: 100%; padding: 12px; margin: 8px 0 15px 0; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px; }
+        textarea { font-family: monospace; background: #fafafa; resize: vertical; }
+        .btn { padding: 12px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 15px; width: 100%; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #004085; }
+        .btn-primary:disabled { background: #a0c0e6; cursor: not-allowed; }
+        .btn-success { background: var(--success); color: white; margin-top: 5px; }
+        .btn-success:hover { background: #218838; }
+        .loading { display: none; color: #856404; background-color: #fff3cd; border: 1px solid #ffeeba; padding: 12px; border-radius: 6px; text-align: center; font-weight: bold; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h3>Google Drive Subfolder Extractor</h3>
+    <p style="font-size: 13px; color: #666; margin-top: -10px;">Gunakan tools ini untuk mengambil semua nama dan link folder pasien yang ada di dalam suatu folder utama.</p>
+    
+    <label>URL Apps Script (Terisi Otomatis jika sudah disetting di Menu Dokter):</label>
+    <input type="password" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+
+    <label>Masukkan Link Folder Utama Google Drive:</label>
+    <input type="text" id="folderUrl" placeholder="https://drive.google.com/drive/folders/...">
+
+    <div id="loadingStatus" class="loading">Sedang membaca Google Drive... Mohon tunggu sebentar (bisa memakan waktu beberapa detik).</div>
+
+    <button class="btn btn-primary" id="btnExtract" onclick="startExtraction()">Ekstrak Daftar Folder</button>
+
+    <div id="resultArea" style="display: none; margin-top: 25px;">
+        <label>Hasil Ekstraksi (Format Kolom GSheet):</label>
+        <textarea id="outputData" rows="12" readonly placeholder="Hasil akan muncul di sini..."></textarea>
+        <button class="btn btn-success" onclick="copyResult()">📋 Copy Hasil Ekstraksi</button>
+    </div>
+</div>
+
+<script>
+    // Ambil GAS URL secara otomatis dari localStorage jika ada
+    document.addEventListener("DOMContentLoaded", () => {
+        const savedUrl = localStorage.getItem('GAS_URL');
+        if (savedUrl) {
+            document.getElementById('gasUrl').value = savedUrl;
+        }
+    });
+
+    async function startExtraction() {
+        const gasUrl = document.getElementById('gasUrl').value.trim();
+        const folderUrl = document.getElementById('folderUrl').value.trim();
+        
+        if (!gasUrl || !folderUrl) {
+            alert("Kedua kolom URL wajib diisi!");
+            return;
+        }
+
+        const btn = document.getElementById('btnExtract');
+        const loader = document.getElementById('loadingStatus');
+        const resultArea = document.getElementById('resultArea');
+
+        btn.disabled = true;
+        loader.style.display = "block";
+        resultArea.style.display = "none";
+
+        try {
+            const response = await fetch(gasUrl, {
+                method: "POST",
+                body: JSON.stringify({
+                    action: 'extractSubfolders',
+                    folderUrl: folderUrl
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                document.getElementById('outputData').value = result.data;
+                resultArea.style.display = "block";
+            } else {
+                alert("Error: " + result.message);
+            }
+        } catch (e) {
+            alert("Gagal menghubungi server Apps Script. Pastikan URL benar dan internet aktif.");
+            console.error(e);
+        } finally {
+            btn.disabled = false;
+            loader.style.display = "none";
+        }
+    }
+
+    function copyResult() {
+        const txtArea = document.getElementById('outputData');
+        txtArea.select();
+        txtArea.setSelectionRange(0, 99999); // Untuk perangkat mobile
+
+        navigator.clipboard.writeText(txtArea.value).then(() => {
+            alert("Daftar folder berhasil dicopy!\n\nSilakan buka Google Sheets, klik satu sel kosong, lalu tekan Ctrl+V.");
+        }).catch(() => {
+            alert("Gagal copy otomatis. Silakan blok teks di textarea secara manual lalu copy.");
+        });
+    }
+</script>
+
+</body>
+</html>

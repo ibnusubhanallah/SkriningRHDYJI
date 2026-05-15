@@ -1,10 +1,11 @@
-const CACHE_NAME = 'screening-v2.2';
+const CACHE_NAME = 'screening-v2.3';
 const ASSETS = [
     './',
     './index.html',
     './app.js',
     './print.html',
     './print.js',
+    './extractor.html',
     './manifest.json',
     './html5-qrcode.min.js',
     './JsBarcode.all.min.js'

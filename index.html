@@ -120,7 +120,10 @@
             margin-bottom: 10px;
         }
 
-        .btn-danger { background: var(--danger); color: white; }
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
 
         .btn-clear {
             background: #6c757d;
@@ -132,6 +135,16 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
         }
     </style>
 </head>
@@ -147,7 +160,8 @@
         <div class="recap-section">
             <div class="flex-between">
                 <strong>List Hasil Screening</strong>
-                <button class="btn btn-upload" id="btnGoToUpload" onclick="openUploadForm()">Upload Data ke Cloud</button>
+                <button class="btn btn-upload" id="btnGoToUpload" onclick="openUploadForm()">Upload Data ke
+                    Cloud</button>
             </div>
             <div style="overflow-x: auto;">
                 <table id="recapTable">
@@ -199,7 +213,8 @@
         <div class="modal">
             <h3>Upload Berhasil!</h3>
             <p>Data telah diterima server. Silakan cek link di bawah ini:</p>
-            <a id="sheetLink" href="#" target="_blank" style="display:block; margin:15px 0; color:var(--primary); font-weight:bold;">BUKA GOOGLE SHEET</a>
+            <a id="sheetLink" href="#" target="_blank"
+                style="display:block; margin:15px 0; color:var(--primary); font-weight:bold;">BUKA GOOGLE SHEET</a>
             <hr>
             <p style="font-size:12px;">Apakah data sudah aman di Google Sheet?</p>
             <button class="btn btn-success" onclick="clearData()">YA (Aman, Kosongkan Data Lokal)</button>

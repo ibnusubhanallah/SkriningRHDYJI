@@ -13,6 +13,10 @@ const ASSETS = [
 self.addEventListener('install', e => {
     e.waitUntil(
         caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+
+    // Paksa Service Worker baru untuk langsung mengonfirmasi instalasi 
+    // tanpa menunggu versi lama mati
+    self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
@@ -21,6 +25,9 @@ self.addEventListener('activate', e => {
             keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
         ))
     );
+
+    // Paksa Service Worker baru untuk langsung mengambil kendali halaman saat ini
+    self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {

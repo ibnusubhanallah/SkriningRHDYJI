@@ -41,7 +41,7 @@ function getFormattedDate() {
     const y = now.getFullYear();
     const hh = String(now.getHours()).padStart(2, '0');
     const mm = String(now.getMinutes()).padStart(2, '0');
-    return [`${d}/${m}/${y} ${hh}:${mm}`, (Number(now) / 1000 / 60 / 60 / 24) + (70 * 365.25) + 2 - (5 / 24)];
+    return [`${d}/${m}/${y} ${hh}:${mm}`, (Number(now) / 1000 / 60 / 60 / 24) + (70 * 365.25) + 2 - (5 / 24), Number(now)];
 }
 
 function checkDuplicate(data) {
@@ -78,7 +78,7 @@ function closeModal(id) {
 function saveToLocal() {
     const isRedflag = document.getElementById('checkRedflag').checked ? "REDFLAG" : "NORMAL";
     const keterangan = document.getElementById('inputNote').value.trim(); // Ambil keterangan (jika ada)
-    const timestamp = getFormattedDate()[0]; // Ambil waktu dalam format yang sudah ditentukan
+    const timestamp = getFormattedDate(); // Ambil waktu dalam format yang sudah ditentukan
 
     // 1. Ambil data lama dari LocalStorage
     let history = JSON.parse(localStorage.getItem('screening_history') || "[]");
@@ -89,8 +89,9 @@ function saveToLocal() {
         history[index] = { ...history[index], status: isRedflag, note: keterangan };
     } else {
         history.unshift({
-            time: timestamp,
-            timestampSortable: getFormattedDate()[1], // Simpan timestamp untuk sorting jika diperlukan
+            time: timestamp[0],
+            timeGsheet: timestamp[1], // Simpan timestamp untuk sorting jika diperlukan
+            timeJS: timestamp[2], // Simpan timestamp asli untuk referensi
             nik: currentScanned[0], // Ambil NIK dari array hasil scan (karena format "NIK|Nama")
             name: currentScanned[1], // Ambil Nama dari array hasil scan
             status: isRedflag,

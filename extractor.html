@@ -27,8 +27,8 @@
     <h3>Google Drive Subfolder Extractor</h3>
     <p style="font-size: 13px; color: #666; margin-top: -10px;">Gunakan tools ini untuk mengambil semua nama dan link folder pasien yang ada di dalam suatu folder utama.</p>
     
-    <label>URL Apps Script (Terisi Otomatis jika sudah disetting di Menu Dokter):</label>
-    <input type="password" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <!-- <label>URL Apps Script (Terisi Otomatis jika sudah disetting di Menu Dokter):</label>
+    <input type="password" id="gasUrl" placeholder="https://script.google.com/macros/s/.../exec"> -->
 
     <label>Masukkan Link Folder Utama Google Drive:</label>
     <input type="text" id="folderUrl" placeholder="https://drive.google.com/drive/folders/...">
@@ -54,7 +54,8 @@
     });
 
     async function startExtraction() {
-        const gasUrl = document.getElementById('gasUrl').value.trim();
+        // const gasUrl = document.getElementById('gasUrl').value.trim();
+        const gasUrl = savedUrl;
         const folderUrl = document.getElementById('folderUrl').value.trim();
         
         if (!gasUrl || !folderUrl) {

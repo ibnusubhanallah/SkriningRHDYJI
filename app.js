@@ -1,4 +1,4 @@
-const GAS_URL = "URL_GOOGLE_APPS_SCRIPT_ANDA_DI_SINI";
+const GAS_URL = "https://script.google.com/macros/s/AKfycbxjwYJqjYx9_Z0x-2ssJPvadfGUL0Ze7hyOtBEkfwKaB4R6OmLCbwNfrpj57ByZ7_m2/exec";
 let html5QrCode = new Html5Qrcode("reader");
 let currentScanned = []; // Array untuk menyimpan hasil scan sementara (NIK dan Nama)
 let isEditing = false; // Flag untuk menandai apakah sedang dalam mode edit atau input baru

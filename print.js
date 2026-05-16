@@ -37,7 +37,7 @@ if (urlParams.has('nik')) {
     JsBarcode("#barcodeCanvas", nik+"_"+nama, {
         format: "CODE128",
         width: 2,
-        height: 50,
+        height: 80,
         displayValue: false,
         margin: 0
     });

@@ -44,7 +44,7 @@ if (urlParams.has('nik')) {
 
     // --- AUTO PRINT & CLOSE ---
     setTimeout(() => {
-        var printer = new Recta('APPKEY', '1689628176')
+        var printer = new Recta('1689628176', '1811')
         printer.open().then(function () {
             printer.align('center')
                 .bold(true)

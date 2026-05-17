@@ -50,7 +50,7 @@ if (urlParams.has('nik')) {
                 .bold(true)
                 .text('Screening RHD')
                 .bold(false)
-                .barcode('CODE128', nik + "_" + nama)
+                .barcode('CODE128', nik)
                 .cut()
                 .print()
         })

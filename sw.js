@@ -7,6 +7,7 @@ const ASSETS = [
     './print.js',
     './extractor.html',
     './manifest.json',
+    './recta.js',
     './html5-qrcode.min.js',
     './JsBarcode.all.min.js'
 ];

@@ -60,9 +60,9 @@ if (urlParams.has('nik')) {
         // Karena dibuka dari Google Sheets, window.close() mungkin butuh izin.
         // Kita beri delay agar proses spooling printer selesai.
         setTimeout(() => {
-            window.close();
+            // window.close();
             // Fallback jika window.close diblokir browser:
-            alert("Selesai! Silakan tutup tab ini dan kembali ke Google Sheets.");
+            // alert("Selesai! Silakan tutup tab ini dan kembali ke Google Sheets.");
         }, 1000);
     }, 500);
 }

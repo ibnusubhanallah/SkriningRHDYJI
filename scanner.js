@@ -45,25 +45,25 @@ function getFormattedDate() {
 }
 
 function checkDuplicate(data) {
-    const [nik, name] = data;
+    const [id, name] = data;
     let history = JSON.parse(localStorage.getItem('screening_history') || "[]");
-    const existing = history.find(item => item.nik === nik);
+    const existing = history.find(item => item.id === id);
 
     if (existing) {
-        if (confirm(`Data NIK ${nik} sudah ada (Status: ${existing.status}). Ingin EDIT data ini?`)) {
+        if (confirm(`Data ID ${id} sudah ada (Status: ${existing.status}). Ingin EDIT data ini?`)) {
             showModal(existing, true);
         } else {
             startScanner(); // Batal, balik scan
         }
     } else {
-        showModal({ nik: nik, name: name, status: "NORMAL", note: "" }, false);
+        showModal({ id: id, name: name, status: "NORMAL", note: "" }, false);
     }
 }
 
 function openEntryModal(data, isEdit) {
     iseditting = isEdit; // Set flag mode edit atau input baru
     document.getElementById('entryTitle').innerText = isEdit ? "Edit Data Screening" : "Input Baru";
-    document.getElementById('displayNik').innerText = "NIK: " + data.nik; // Tampilkan NIK
+    document.getElementById('displayId').innerText = "ID: " + data.id; // Tampilkan ID
     document.getElementById('displayName').innerText = "Nama: " + data.name; // Tampilkan Nama
     document.getElementById('checkRedflag').checked = (data.status === "REDFLAG");
     document.getElementById('inputNote').value = data.note === "-" ? "" : data.note;
@@ -85,14 +85,14 @@ function saveToLocal() {
 
     // 2. Tambah data baru
     if (isEditMode) {
-        const index = history.findIndex(i => i.nik === currentScanned[0]);
+        const index = history.findIndex(i => i.id === currentScanned[0]);
         history[index] = { ...history[index], status: isRedflag, note: keterangan };
     } else {
         history.unshift({
             time: timestamp[0],
             timeGsheet: timestamp[1], // Simpan timestamp untuk sorting jika diperlukan
             timeJS: timestamp[2], // Simpan timestamp asli untuk referensi
-            nik: currentScanned[0], // Ambil NIK dari array hasil scan (karena format "NIK|Nama")
+            id: currentScanned[0], // Ambil NIK dari array hasil scan (karena format "NIK|Nama")
             name: currentScanned[1], // Ambil Nama dari array hasil scan
             status: isRedflag,
             note: keterangan || "-" // Simpan keterangan, jika kosong isi dengan "-"
@@ -120,21 +120,21 @@ function renderTable() {
         tbody.innerHTML += `
             <tr>
                 <td>${item.time}</td>
-                <td>${item.nik}</td>
+                <td>${item.id}</td>
                 <td>${item.name}</td>
                 <td>${badge}</td>
                 <td>${item.note}</td>
-                <td><button onclick="editManual('${item.nik}')">Edit</button></td>
+                <td><button onclick="editManual('${item.id}')">Edit</button></td>
             </tr>
         `;
     });
 
 }
 
-function editManual(nik) {
-    currentNik = nik;
+function editManual(id) {
+    currentId = id;
     const history = JSON.parse(localStorage.getItem('screening_history') || "[]");
-    openEntryModal(history.find(i => i.nik === nik), true);
+    openEntryModal(history.find(i => i.id === id), true);
 }
 
 // // FUNGSI COPY UNTUK GOOGLE SHEETS
@@ -145,7 +145,7 @@ function editManual(nik) {
 //     // Buat format Tab-Separated Values (TSV) agar pas masuk ke kolom GSheet
 //     let tsvContent = "Waktu\tNIK\tNama\tStatus\tKeterangan\n"; // Header
 //     history.forEach(item => {
-//         tsvContent += `${item.timestampSortable}\t${item.nik}\t${item.name}\t${item.status}\t${item.note}\n`;
+//         tsvContent += `${item.timestampSortable}\t${item.id}\t${item.name}\t${item.status}\t${item.note}\n`;
 //     });
 
 //     navigator.clipboard.writeText(tsvContent).then(() => {

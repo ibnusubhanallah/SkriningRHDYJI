@@ -27,6 +27,13 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    document.getElementById("fId").addEventListener("blur", function (e) {
+        if (this.value.length > 0 && this.value.length !== 7 && e.relatedTarget.id !== "cancelBtn") {
+            alert("⚠️ Kesalahan Input: ID harus tepat 7 digit!");
+            setTimeout(() => this.focus(), 10);
+        }
+    });
+
     document.getElementById("fNik").addEventListener("input", function () {
         if (this.value.length === 16) {
             parseDataFromNik(this.value);
@@ -40,12 +47,19 @@ function toggleMejaField() {
     document.getElementById("mejaFieldWrapper").style.display = isRegChecked ? "block" : "none";
 }
 
+function togglePrinterField() {
+    const isPrinterChecked = document.getElementById("usePrinter").checked;
+    document.getElementById("printerFieldWrapper").style.display = isPrinterChecked ? "block" : "none";
+}
+
 function initSession() {
     const wilayah = document.getElementById("gwWilayah").value;
     const kodeLokasi = document.getElementById("gwKodeLokasi").value.trim();
     const modReg = document.getElementById("modReg").checked;
     const modAntro = document.getElementById("modAntro").checked;
     const meja = document.getElementById("gwMeja").value.trim();
+    const appkey = document.getElementById("gwAppKey").value.trim();
+    const appport = document.getElementById("gwAppPort").value.trim();
 
     if (!wilayah) return alert("Pilih Wilayah terlebih dahulu!");
     if (!/^\d{2}$/.test(kodeLokasi)) return alert("Kode lokasi harus angka 2 digit (01-99)!");
@@ -54,6 +68,8 @@ function initSession() {
 
     configSession = { wilayah, kodeLokasi, modReg, modAntro, meja };
     localStorage.setItem("skrining_config", JSON.stringify(configSession));
+    localStorage.setItem("RECTA_KEY", appkey);
+    localStorage.setItem("RECTA_PORT", appport);
 
     if (!localStorage.getItem("skrining_records")) {
         localStorage.setItem("skrining_records", JSON.stringify([]));
@@ -70,8 +86,14 @@ function showMainDashboard() {
 
     document.getElementById("metaWilayah").innerText = "Wilayah: " + configSession.wilayah;
     document.getElementById("metaLokasi").innerText = "Kode Lokasi: " + configSession.kodeLokasi;
-    document.getElementById("metaMeja").innerText = configSession.modReg ? "Meja: " + configSession.meja : "Meja: -";
-    document.getElementById("metaModul").innerText = `Modul: ${configSession.modReg ? 'Reg' : ''} ${configSession.modAntro ? '& Antro' : ''}`;
+    if (configSession.modReg) {
+        document.getElementById("metaMeja").innerText = "Meja: " + configSession.meja;
+    } else {
+        document.getElementById("metaMeja").style.display = "none";
+    }
+    document.getElementById("metaModul").innerText = `Modul: ${configSession.modReg ? (configSession.modAntro ? 'Regis & Antro' : 'Regis') : 'Antro'}`;
+
+    document.getElementById("btnScanIdPasien").style.display = !configSession.modReg ? "flex" : "none";
 
     document.getElementById("subFormRegistrasi").style.display = configSession.modReg ? "block" : "none";
     document.getElementById("subFormAntropometri").style.display = configSession.modAntro ? "block" : "none";
@@ -250,7 +272,9 @@ function loadRecordToEdit(id = null) {
         document.getElementById("fId").value = record.id;
         document.getElementById("fNamaSingkat").focus();
     } else {
-        document.getElementById("fId").disabled = false;
+        if (!record) {
+            document.getElementById("fId").disabled = false;
+        }
         document.getElementById("formTitle").innerText = "Form Antropometri Pasien";
         document.getElementById("formSection").style.display = "block";
         document.getElementById("fId").focus();
@@ -442,14 +466,15 @@ const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjwYJqj
 async function uploadDataToCloud() {
     // Ambil rekap data paling valid dan singkirkan draft kosong
     const validRecords = masterRecords.filter(r => !r.isDraft);
+    const kodeakses = document.getElementById("fAccessCodeCloud").value.trim();
     if (validRecords.length === 0) return alert("❌ Tidak ada data valid yang bisa diupload saat ini.");
-    
+
     if (!navigator.onLine) return alert("🌐 Koneksi Gagal: Perangkat Anda sedang offline. Cari sinyal internet dahulu!");
 
     if (confirm(`Apakah Anda yakin ingin mengunggah ${validRecords.length} data pasien saat ini ke Google Sheets Cloud?`)) {
         const btnUpload = document.querySelector("#modalAkhiriSesi .btn-cloud");
         const originalText = btnUpload.innerText;
-        
+
         // Kunci tombol agar tidak di-klik dua kali (Double Post Prevention)
         btnUpload.disabled = true;
         btnUpload.innerText = "⏳ Sedang Mengunggah Data...";
@@ -458,7 +483,13 @@ async function uploadDataToCloud() {
             // Tembak data ke Google Apps Script menggunakan metode POST JSON
             const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
+                // mode: "no-cors", // Optional: use if you don't need to read the response body
+                headers: {
+                    "Content-Type": "text/plain;charset=utf-8" // Avoids CORS preflight
+                },
                 body: JSON.stringify({
+                    action: "regist",
+                    kodeakses: kodeakses,
                     config: configSession,
                     payload: validRecords
                 })
@@ -534,10 +565,13 @@ function connectPrinter() {
     });
 }
 
-function actualResetSesi() {
-    localStorage.removeItem("skrining_config");
-    localStorage.removeItem("skrining_records");
-    location.reload();
+function actualResetSesi() {   
+    if (confirm("Reset sesi saat ini? Semua data rekap di perangkat ini akan dibersihkan secara permanen.")) {
+        // Logika penghapusan localstorage
+        localStorage.removeItem("skrining_config");
+        localStorage.removeItem("skrining_records");
+        location.reload();
+    }
 }
 
 // Fungsi Trigger Cetak Struk via Recta Host
@@ -558,4 +592,35 @@ function triggerRectaPrint(id) {
         .text("T. Lahir: " + record.ttl)
         .feed(4)
         .print();
+}
+
+let idScannerInstance = new Html5Qrcode("idReader");
+
+function openScannerIdModal() {
+    document.getElementById("modalScannerId").style.display = "flex";
+    const config = { fps: 20, qrbox: { width: 260, height: 120 }, aspectRatio: 1.0 };
+    
+    idScannerInstance.start(
+        { facingMode: "environment" },
+        config,
+        (scannedText) => {
+            // Masukkan hasil scan langsung ke field ID Peserta
+            document.getElementById("fId").value = scannedText.split("_")[0].trim();
+            // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localstorage
+            // checkDuplicate(scannedText.trim());
+            closeScannerIdModal();
+        }
+    ).catch(err => console.error("Kamera ID Error: ", err));
+}
+
+function closeScannerIdModal() {
+    if (idScannerInstance.isScanning) {
+        idScannerInstance.stop().then(() => {
+            // document.getElementById("idReader").innerHTML = "";
+            document.getElementById("modalScannerId").style.display = "none";
+            // idScannerInstance = null;
+        });
+    } else {
+        document.getElementById("modalScannerId").style.display = "none";
+    }
 }

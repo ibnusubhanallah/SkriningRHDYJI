@@ -1,15 +1,22 @@
-const CACHE_NAME = 'screening-v2.3';
+const CACHE_NAME = 'screening-v3';
 const ASSETS = [
     './',
+    './draft flow skrining RHD - regist n antro.jpg',
+    './draft flow skrining RHD - regist only.jpg',
+    './entri.html',
+    './entri.js',
+    './extractor.html',
+    './html5-qrcode.min.js',
     './index.html',
-    './app.js',
+    './JsBarcode.all.min.js',
+    './manifest.json',
     './print.html',
     './print.js',
-    './extractor.html',
-    './manifest.json',
     './recta.js',
-    './html5-qrcode.min.js',
-    './JsBarcode.all.min.js'
+    './scanner.html',
+    './scanner.js',
+    './sop.html',
+    './sw.js',
 ];
 
 self.addEventListener('install', e => {

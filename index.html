@@ -4,504 +4,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Entri Data Skrining</title>
-    <link rel="manifest" href="manifest.json">
-    <script src="recta.js"></script>
+    <title>Screening RHD - YJI 2026</title>
     <script src="install.js"></script>
     <style>
         :root {
-            --primary: #0056b3;
-            --success: #28a745;
-            --bg: #f4f7f6;
-            --border: #ccd1d9;
+            --primary: #c82333;
+            /* Merah khas Yayasan Jantung Indonesia */
+            --primary-hover: #bd2130;
+            --bg: #f8f9fa;
+            --text: #212529;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg);
             margin: 0;
-            padding: 20px;
-            color: #333;
+            padding: 0;
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
 
         .container {
-            max-width: 1000px;
+            max-width: 650px;
             margin: auto;
+            padding: 30px 20px;
+            text-align: center;
+            flex: 1;
         }
 
-        .card {
-            background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-            margin-bottom: 20px;
+        .header {
+            margin-bottom: 40px;
         }
 
-        /* Gateway Style */
-        .gateway-box {
-            max-width: 500px;
-            margin: 50px auto;
+        .header h1 {
+            font-size: 26px;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1.3;
+            margin: 0 0 10px 0;
+            white-space: pre-line;
+            /* Membaca tanda \n */
         }
 
-        h2,
-        h3 {
-            margin-top: 0;
-            color: #111;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            font-weight: bold;
+        .header p {
             font-size: 14px;
+            color: #6c757d;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        /* Grid Menu Tombol Besar */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
             margin-bottom: 5px;
         }
 
-        input[type="text"],
-        input[type="number"],
-        select,
-        textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-size: 15px;
+        @media(min-width: 480px) {
+            .menu-grid {
+                grid-template-columns: 1fr 1fr;
+            }
         }
 
-        input:focus,
-        select:focus,
-        textarea:focus {
-            outline: 2px solid var(--primary);
-            background: #fbfdff;
-        }
-
-        .checkbox-group {
+        .menu-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 12px;
+            padding: 25px 20px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.25s ease;
             display: flex;
-            gap: 15px;
-            margin: 10px 0;
-        }
-
-        .checkbox-group label {
-            display: inline-flex;
+            flex-direction: column;
             align-items: center;
-            gap: 5px;
+            justify-content: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
             cursor: pointer;
         }
 
-        /* Button Style */
-        .btn {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 6px;
-            font-weight: bold;
-            cursor: pointer;
+        .menu-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+            box-shadow: 0 8px 15px rgba(200, 35, 51, 0.08);
+        }
+
+        .menu-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+        }
+
+        .menu-title {
             font-size: 15px;
-        }
-
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-success {
-            background: var(--success);
-            color: white;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-            color: white;
-        }
-
-        .btn-cloud {
-            background: #17a2b8;
-            color: white;
-        }
-
-        /* Main Dashboard Frame */
-        #mainScreen {
-            display: none;
-        }
-
-        .meta-info {
-            background: #e8f0fe;
-            padding: 15px;
-            border-radius: 6px;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
             font-weight: bold;
-            color: var(--primary);
-            margin-bottom: 15px;
+            margin-bottom: 6px;
+            color: #111;
         }
 
-        .meta-text {
-            display: flex;
-            gap: 20px;
-        }
-
-        /* Form Entri Dinamis */
-        #formSection {
-            display: none;
-            background: #f9fafb;
-            border: 1px solid var(--border);
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .grid-2 {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-        }
-
-        .field-note {
+        .menu-desc {
             font-size: 12px;
-            color: #656d78;
-            margin-top: 2px;
-            font-style: italic;
+            color: #6c757d;
+            line-height: 1.4;
         }
 
-        /* Tabel Rekap dengan Frozen Column */
-        .table-wrapper {
-            overflow-x: auto;
-            max-width: 100%;
-            border: 1px solid var(--border);
-            border-radius: 6px;
-            background: white;
-            margin-top: 15px;
+        /* SOP Button Full Width */
+        .menu-card.full-width {
+            grid-column: 1 / -1;
+            background: #fff5f5;
+            border-color: #feb2b2;
         }
 
-        table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            font-size: 14px;
+        .menu-card.full-width:hover {
+            border-color: var(--primary);
+            box-shadow: 0 8px 15px rgba(200, 35, 51, 0.08);
         }
 
-        th,
-        td {
-            padding: 10px 12px;
-            border-bottom: 1px solid #e6e9ed;
-            border-right: 1px solid #e6e9ed;
-            background: white;
-            white-space: nowrap;
-        }
-
-        th {
-            background: #f5f7fa;
-            font-weight: bold;
-            text-align: left;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-
-        /* Pembekuan Berurutan ke Kanan: Kolom 1 (Aksi), Kolom 2 (ID), Kolom 3 (Nama Singkat) */
-        th:nth-child(1),
-        td:nth-child(1) {
-            position: sticky;
-            left: 0;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 65px;
-            max-width: 65px;
-            width: 65px;
-            border-right: 1px solid #ccd1d9;
-            text-align: center;
-        }
-
-        th:nth-child(2),
-        td:nth-child(2) {
-            position: sticky;
-            left: 90px;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 75px;
-            max-width: 75px;
-            width: 75px;
-            border-right: 1px solid #ccd1d9;
-        }
-
-        th:nth-child(3),
-        td:nth-child(3) {
-            position: sticky;
-            left: 190px;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 95px;
-            max-width: 95px;
-            width: 95px;
-            border-right: 2px solid #ccd1d9;
-        }
-
-        td:nth-child(1),
-        td:nth-child(2),
-        td:nth-child(3) {
-            background: #fff !important;
-        }
-
-        tr:hover td {
-            background: #f1f5f9 !important;
-        }
-
-        .table-header-flex {
+        /* Footer Pojok Bawah */
+        .footer {
+            text-align: right;
+            padding: 20px;
+            font-size: 12px;
+            color: #6c757d;
+            line-height: 1.6;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+        }
+
+        .footer a {
+            color: #6c757d;
+            text-decoration: none;
+            /* font-weight: bold; */
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 
 <body>
+
     <div class="container">
-        <div id="gatewayScreen" class="card gateway-box">
-            <h2>Setup Konfigurasi Sesi</h2>
-            <div class="form-group">
-                <label for="gwWilayah">Wilayah *</label>
-                <select id="gwWilayah" required>
-                    <option value="" disabled selected>Pilih Wilayah...</option>
-                    <option value="Malang">Malang</option>
-                    <option value="Bekasi">Bekasi</option>
-                    <option value="Lampung">Lampung</option>
-                    <option value="Minahasa Utara">Minahasa Utara</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label for="gwKodeLokasi">Kode Lokasi Skrining (2 Digit, 01-99) *</label>
-                <input type="text" id="gwKodeLokasi" maxlength="2" placeholder="Contoh: 01">
-            </div>
-            <div class="form-group">
-                <label>Modul Input Data:</label>
-                <div class="checkbox-group">
-                    <label><input type="checkbox" id="modReg" onchange="toggleMejaField()" checked> Registrasi</label>
-                    <label><input type="checkbox" id="modAntro" checked> Antropometri</label>
-                </div>
-            </div>
-            <div class="form-group" id="mejaFieldWrapper">
-                <label for="gwMeja">Meja Registrasi Ke- *</label>
-                <input type="number" id="gwMeja" min="1" placeholder="Contoh: 1">
-            </div>
-            <button class="btn btn-primary" style="width: 100%;" onclick="initSession()">Buka Aplikasi Entri</button>
+        <div class="header">
+            <h1>Screening Rheumatic Heart Disease&#10;Yayasan Jantung Indonesia 2026</h1>
+            <p>Sistem Manajemen Integrasi Data Lapangan & Klinis</p>
         </div>
 
-        <div id="mainScreen">
-            <div class="card">
-                <div class="meta-info">
-                    <div class="meta-text">
-                        <div id="metaWilayah">Wilayah: -</div>
-                        <div id="metaLokasi">Lokasi: -</div>
-                        <div id="metaMeja">Meja: -</div>
-                        <div id="metaModul">Modul: -</div>
-                    </div>
-                    <div>
-                        <button class="btn btn-cloud" id="btnSettingPrinter" onclick="openPrinterModal()"
-                            style="display: none; background: #6c757d;">🔌 Setting Printer</button>
-                        <button class="btn btn-danger" style="margin-left: 10px;" onclick="openAkhiriSesiModal()">❌
-                            Akhiri Sesi</button>
-                    </div>
-                </div>
-            </div>
+        <div class="menu-grid">
+            <a href="entri.html" class="menu-card">
+                <div class="menu-icon">📝</div>
+                <div class="menu-title">Registrasi & Antropometri</div>
+                <div class="menu-desc">Entri data demografi, parsing NIK otomatis, dan pemeriksaan fisik dasar meja
+                    registrasi.</div>
+            </a>
 
-            <div id="formSection" class="card">
-                <h3 id="formTitle">Form Input Skrining</h3>
-                <form id="entryForm" onsubmit="handleFormSubmit(event)">
-                    <div class="grid-2">
-                        <div class="form-group" style="max-width: 300px;">
-                            <label for="fId">ID Peserta:</label>
-                            <input type="text" id="fId" disabled>
-                        </div>
-                        <div class="form-group">
-                            <label for="fNamaSingkat">Nama Singkat (Maks 9 Huruf) *</label>
-                            <input type="text" id="fNamaSingkat" maxlength="9">
-                        </div>
-                    </div>
+            <a href="scanner.html" class="menu-card">
+                <div class="menu-icon">🩺</div>
+                <div class="menu-title">Screening & Redflag</div>
+                <div class="menu-desc">Modul dokter untuk pindai barcode struk pasien, anamnesis lanjutan, serta
+                    penandaan redflag.</div>
+            </a>
 
-                    <div id="subFormRegistrasi">
-                        <h4>[Modul] Data Registrasi Pasien</h4>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fNik">NIK (16 Digit, Angka Only)</label>
-                                <input type="text" id="fNik" maxlength="16" placeholder="Masukkan 16 digit NIK"
-                                    oninput="this.value = this.value.replace(/\D/g, '')">
-                            </div>
-                            <div class="form-group">
-                                <label for="fNamaLengkap">Nama Lengkap Anak *</label>
-                                <input type="text" id="fNamaLengkap">
-                            </div>
-                        </div>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fJk">Jenis Kelamin *</label>
-                                <select id="fJk">
-                                    <option value="" disabled selected>Pilih...</option>
-                                    <option value="Laki-laki">Laki-laki</option>
-                                    <option value="Perempuan">Perempuan</option>
-                                </select>
-                                <div id="noteJk" class="field-note"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="fTtl">Tanggal Lahir (dd-mm-yyyy) *</label>
-                                <input type="text" id="fTtl" placeholder="dd-mm-yyyy" oninput="handleDateMask(this)">
-                                <div id="noteTtl" class="field-note"></div>
-                            </div>
-                        </div>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fOrtu">Nama Orang Tua / Wali</label>
-                                <input type="text" id="fOrtu">
-                            </div>
-                            <div class="form-group">
-                                <label for="fPekerjaan">Pekerjaan Orang Tua / Wali</label>
-                                <input type="text" id="fPekerjaan">
-                            </div>
-                        </div>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fHp">No. HP</label>
-                                <input type="text" id="fHp">
-                            </div>
-                        </div>
-                    </div>
+            <a href="extractor.html" class="menu-card">
+                <div class="menu-icon">📂</div>
+                <div class="menu-title">Ekstraksi Link Folder</div>
+                <div class="menu-desc">Otomatisasi pemetaan link subfolder dokumentasi medis/Lumify pasien dari Google
+                    Drive.</div>
+            </a>
 
-                    <div id="subFormAntropometri" style="margin-top: 20px;">
-                        <h4>[Modul] Data Antropometri & Klinis</h4>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fBb">Berat Badan (BB) dalam kg *</label>
-                                <input type="text" id="fBb" oninput="handleThreeDigitLimit(this)">
-                            </div>
-                            <div class="form-group">
-                                <label for="fTb">Tinggi Badan (TB) dalam cm *</label>
-                                <input type="text" id="fTb" oninput="handleThreeDigitLimit(this)">
-                            </div>
-                        </div>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fTd">Tekanan Darah (T. Darah)</label>
-                                <input type="text" id="fTd" placeholder="Contoh: 110/70">
-                            </div>
-                            <div class="form-group">
-                                <label for="fHr">Heart Rate (bpm)</label>
-                                <input type="number" id="fHr">
-                            </div>
-                        </div>
-
-                        <h5>Anamnesis</h5>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fDemam">Demam dalam 1 minggu terakhir?</label>
-                                <select id="fDemam" onchange="toggleAnamnesisNote('fDemam', 'fDemamNote')">
-                                    <option value="-" disabled selected>Pilih...</option>
-                                    <option value="Tidak">Tidak</option>
-                                    <option value="Ya">Ya</option>
-                                </select>
-                                <input type="text" id="fDemamNote" placeholder="Keterangan demam..."
-                                    style="display:none; margin-top:5px;">
-                            </div>
-                            <div class="form-group">
-                                <label for="fTenggorokan">Sakit tenggorokan dalam 1 bulan terakhir?</label>
-                                <select id="fTenggorokan"
-                                    onchange="toggleAnamnesisNote('fTenggorokan', 'fTenggorokanNote')">
-                                    <option value="" disabled selected>Pilih...</option>
-                                    <option value="Tidak">Tidak</option>
-                                    <option value="Ya">Ya</option>
-                                </select>
-                                <input type="text" id="fTenggorokanNote" placeholder="Keterangan sakit tenggorokan..."
-                                    style="display:none; margin-top:5px;">
-                            </div>
-                        </div>
-                        <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fObat">Mengkonsumsi obat?</label>
-                                <select id="fObat" onchange="toggleAnamnesisNote('fObat', 'fObatNote')">
-                                    <option value="" disabled selected>Pilih...</option>
-                                    <option value="Tidak">Tidak</option>
-                                    <option value="Ya">Ya</option>
-                                </select>
-                                <input type="text" id="fObatNote" placeholder="Nama obat/keterangan..."
-                                    style="display:none; margin-top:5px;">
-                            </div>
-                            <div class="form-group">
-                                <label for="fRs">Pernah dirawat di RS?</label>
-                                <select id="fRs" onchange="toggleAnamnesisNote('fRs', 'fRsNote')">
-                                    <option value="" disabled selected>Pilih...</option>
-                                    <option value="Tidak">Tidak</option>
-                                    <option value="Ya">Ya</option>
-                                </select>
-                                <input type="text" id="fRsNote" placeholder="Alasan dirawat di RS..."
-                                    style="display:none; margin-top:5px;">
-                            </div>
-                        </div>
-                    </div>
-
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button type="submit" class="btn btn-success">Simpan Data</button>
-                        <button type="button" class="btn" onclick="hideFormSection()">Batal / Hapus Draft</button>
-                    </div>
-                </form>
-            </div>
-
-            <div class="card">
-                <div class="table-header-flex">
-                    <h3 style="margin:0;">Daftar Hasil Entri Pasien</h3>
-                    <button class="btn btn-primary" id="btnOpenForm" onclick="createAndReserveNewPatient()">+ Tambah
-                        Data Pasien</button>
-                </div>
-                <div class="table-wrapper">
-                    <table id="mainTable">
-                        <thead>
-                            <tr id="tableHeaders"></tr>
-                        </thead>
-                        <tbody id="tableBody"></tbody>
-                    </table>
-                </div>
-            </div>
+            <a href="sop.html" class="menu-card">
+                <div class="menu-icon">📋</div>
+                <div class="menu-title">SOP Kegiatan Skrining</div>
+                <div class="menu-desc">Panduan manajemen kode lokasi, alokasi nomor meja, dan alur mitigasi data
+                    lapangan untuk PIC kegiatan.</div>
+            </a>
+        </div>
+        <div id="cacheStatus"
+            style="margin-top: 30px; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; display: inline-block;">
+            ⏳ Memeriksa status penyimpanan offline...
         </div>
     </div>
 
-    <div id="modalAkhiriSesi"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="modal"
-            style="background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 400px; width: 85%;">
-            <h3>Menu Akhiri Sesi</h3>
-            <p>Silakan pilih tindakan mitigasi data sebelum keluar.</p>
-            <button class="btn btn-cloud" onclick="uploadDataToCloud()"
-                style="width: 100%; margin-bottom: 10px; background: #17a2b8;">☁️ Upload Data ke Cloud</button>
-            <button class="btn btn-danger" onclick="actualResetSesi()" style="width: 100%; margin-bottom: 10px;">🔴
-                Akhiri Sesi (Hapus Data Lokal)</button>
-            <button class="btn" onclick="closeModal('modalAkhiriSesi')"
-                style="width: 100%; background: #bbb; color: black;">Batal</button>
-        </div>
+    <div class="footer">
+        <div><a href="https://instagram.com/ibnusubhanallah" target="_blank">Dibuat dengan bantuan Gemini</a></div>
+        <div>Barakallah fiikum 🙏</div>
     </div>
 
-    <div id="modalPrinter"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="modal" style="background: white; padding: 25px; border-radius: 12px; max-width: 400px; width: 85%;">
-            <h3 style="text-align: center; margin-top:0;">Setting Koneksi Recta</h3>
-            <div class="form-group">
-                <label>APPKEY Recta:</label>
-                <input type="text" id="pRectaKey" placeholder="Contoh: 123456789...">
-            </div>
-            <div class="form-group">
-                <label>HOST / PORT Recta:</label>
-                <input type="text" id="pRectaPort" value="1811" placeholder="Contoh: 1811">
-            </div>
-            <div id="printerStatusText" style="font-weight: bold; margin: 10px 0; text-align: center; font-size: 14px;">
-            </div>
-            <button class="btn btn-success" onclick="connectPrinter()" style="width: 100%;">Hubungkan Printer</button>
-            <button class="btn" onclick="closeModal('modalPrinter')"
-                style="width: 100%; margin-top: 10px; background: #bbb; color: black;">Tutup</button>
-        </div>
-    </div>
+    <script>
+        // Registrasi Service Worker sekaligus cek status Cache Assets
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('sw.js').then((registration) => {
+                const statusDiv = document.getElementById('cacheStatus');
 
-    <script src="app.js"></script>
+                // Fungsi untuk mengecek apakah file utama sudah aman di dalam Cache Storage
+                function checkCacheReady() {
+                    if ('caches' in window) {
+                        caches.open('screening-v3').then(cache => {
+                            cache.match('index.html').then(match => {
+                                if (match) {
+                                    statusDiv.innerText = "🟢 Aplikasi Siap Digunakan Offline (Tercache)";
+                                    statusDiv.style.background = "#e2f0d9";
+                                    statusDiv.style.color = "#385723";
+                                } else {
+                                    statusDiv.innerText = "⚠️ Belum Siap Offline: Sedang mengunduh aset...";
+                                    statusDiv.style.background = "#fff2cc";
+                                    statusDiv.style.color = "#7f6000";
+                                }
+                            });
+                        });
+                    }
+                }
+
+                // Jalankan cek saat pertama load
+                checkCacheReady();
+
+                // Jika ada update service worker selesai diinstal di latar belakang, cek ulang
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed') {
+                            setTimeout(checkCacheReady, 1000); // Beri jeda 1 detik lalu update status
+                        }
+                    });
+                });
+            }).catch(err => {
+                console.error("Service Worker Gagal:", err);
+            });
+        } else {
+            document.getElementById('cacheStatus').innerText = "❌ Browser tidak mendukung mode offline (PWA).";
+            document.getElementById('cacheStatus').style.background = "#fce4d6";
+            document.getElementById('cacheStatus').style.color = "#c65911";
+        }
+    </script>
+
 </body>
 
 </html>

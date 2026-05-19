@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOP Kegiatan Skrining RHD 2026</title>
+    <style>
+        :root { 
+            --primary: #c82333; 
+            --primary-light: #fff5f5;
+            --text: #212529;
+            --border: #dee2e6;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #f8f9fa; 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text);
+            line-height: 1.6;
+        }
+        .container { max-width: 750px; margin: auto; }
+        
+        /* Header */
+        .header { 
+            text-align: center; 
+            margin-bottom: 30px; 
+            border-bottom: 3px solid var(--primary); 
+            padding-bottom: 20px;
+        }
+        .header h1 { margin: 0; color: var(--primary); font-size: 24px; font-weight: 800; }
+        .header p { margin: 5px 0 0 0; color: #6c757d; font-size: 14px; font-weight: 500; }
+
+        .section-title {
+            background: #e9ecef;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 16px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: #495057;
+            border-left: 5px solid var(--primary);
+        }
+
+        /* Accordion / Card Style */
+        .sop-card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+        .sop-header {
+            background: white;
+            padding: 15px 20px;
+            font-weight: bold;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        .sop-header:hover { background: #f1f3f5; }
+        .sop-content {
+            display: none;
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background: #fdfdfd;
+            font-size: 14px;
+        }
+        .sop-content ul, .sop-content ol { margin: 0; padding-left: 20px; }
+        .sop-content li { margin-bottom: 8px; }
+        .sop-content li:last-child { margin-bottom: 0; }
+        
+        /* Badge & Highlight */
+        .badge { background: var(--primary); color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+        .highlight { background: #fff3cd; padding: 2px 4px; border-radius: 4px; font-weight: bold; color: #856404; }
+        
+        /* Image Placeholder */
+        .img-placeholder {
+            background: #e9ecef;
+            border: 2px dashed #6c757d;
+            padding: 20px 20px;
+            text-align: center;
+            color: #6c757d;
+            margin: 15px 0;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .img-placeholder img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .btn-back {
+            display: inline-block;
+            text-decoration: none;
+            color: #6c757d;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .btn-back:hover { color: var(--text); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <a href="index.html" class="btn-back">⬅️ Kembali ke Menu Utama</a>
+
+    <div class="header">
+        <h1>STANDARD OPERATING PROCEDURE (SOP)</h1>
+        <p>Manajemen Data Kegiatan Skrining RHD - YJI 2026</p>
+    </div>
+
+    <div class="section-title">A. TAHAP PERSIAPAN SEBELUM KEGIATAN (PRA-SKRINING)</div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>1. Tata Letak Posisi Alur Lapangan</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <ul>
+                <li><strong>Meja Registrasi (1) & Antropometri (2):</strong> Tempat pertama anak datang. Petugas mengentri NIK, data demografi, serta pengukuran BB/TB. Struk barcode identitas dicetak di meja ini.</li>
+                <li><strong>Ruang Tunggu Dokter:</strong> Anak memegang struk barcode masing-masing sambil mengantre panggilan pemeriksaan.</li>
+                <li><strong>Meja Pemeriksaan Echo / Dokter:</strong> Dokter menggunakan mesin Lumify. Dokter memindai barcode anak untuk mengisi Patient ID di Lumify, melakukan pemeriksaan, lalu men-scan ulang di aplikasi screening untuk menentukan status <span class="badge">REDFLAG</span> / <span class="badge" style="background:#28a745">NORMAL</span>.</li>
+            </ul>
+            <div class="img-placeholder">
+                <img src="draft flow skrining RHD - regist n antro.jpg" alt="Denah Posisi Meja Skrining Lapangan" onerror="this.parentElement.innerHTML='[Tempat Gambar Denah Lapangan/Meja Skrining - Silakan upload file gambar dengan nama posisi_meja.png ke repo GitHub Anda]'">
+                <p style="margin-top: 10px; font-size: 12px;">[Opsi 1: Meja Registrasi dan Antropometri dipisah. Dianjurkan untuk kegiatan skrining yang melibatkan banyak peserta]</p>
+                <br>
+                <img src="draft flow skrining RHD - regist only.jpg" alt="Denah Posisi Meja Skrining Lapangan" onerror="this.parentElement.innerHTML='[Tempat Gambar Denah Lapangan/Meja Skrining - Silakan upload file gambar dengan nama posisi_meja.png ke repo GitHub Anda]'">
+                <p style="margin-top: 10px; font-size: 12px;">[Opsi 2: Meja Registrasi dan Antropometri digabung. Dianjurkan untuk kegiatan skrining yang melibatkan sedikit peserta]</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>2. Antisipasi Kendala Sinyal & Aktivasi PWA</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <p>Aplikasi ini didukung oleh sistem <strong>Progressive Web App (PWA)</strong> yang memungkinkannya beroperasi penuh tanpa jaringan internet. Namun wajib mengikuti aturan ini:</p>
+            <ol>
+                <li><strong>H-1 Kegiatan:</strong> Seluruh PIC perangkat (laptop/tablet petugas & HP dokter) <span class="highlight">WAJIB membuka website minimal 1x saat kondisi online internet</span>.</li>
+                <li>Langkah ini bertujuan agar mesin browser (Service Worker) mengunduh seluruh skrip, font, gambar, dan pustaka scanner/barcode ke memori lokal perangkat.</li>
+                <li>Setelah berhasil dibuka sekali saat online, disarankan untuk melakukan klik <strong>"Add to Home Screen"</strong> (Tambahkan ke Layar Utama) agar aplikasi terpasang seperti aplikasi native dan siap dipakai offline total di sekolah tujuan.</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>3. Alur Disiplin Pengisian Data Lapangan</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <ul>
+                <li><strong>Standardisasi Kode Lokasi (Mutlak):</strong> Kode lokasi skrining (2 digit, 01-99) harus sudah disepakati di tingkat PIC Wilayah sebelum hari H dan <span class="highlight">tidak boleh berubah di tengah jalan</span> karena kode ini menyusun keunikan ID peserta.</li>
+                <li><strong>Disiplin Nomor Meja:</strong> Jika dalam 1 lokasi terdapat lebih dari 1 meja registrasi, pastikan nomor meja diinput berbeda (Meja 1, Meja 2, dst) untuk menghindari bentrok generate nomor urutan otomatis antar-tab/perangkat.</li>
+                <li><strong>Navigasi Cepat:</strong> Petugas diimbau membiasakan diri menggunakan tombol <span class="highlight">Tab</span> pada keyboard fisik untuk berpindah antarkolom input form demi efisiensi waktu entri.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>4. Barcode & Instalasi Printer Thermal Portable</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <ol>
+                <li>Pastikan software <strong>Recta Host</strong> sudah terpasang dan berjalan aktif di laptop/perangkat perantara printer.</li>
+                <li>Nyalakan Bluetooth/sambungkan kabel USB printer thermal portable ukuran kertas 58mm.</li>
+                <li>Di aplikasi entri, klik tombol 🔌 <strong>Setting Printer</strong> di kanan atas, isi token <code>APPKEY</code> dan nomor <code>HOST/PORT</code> sesuai setelan Recta Host Anda.</li>
+                <li>Klik "Hubungkan Printer". Jika sukses, status akan berubah menjadi hijau (Printer Terhubung).</li>
+                <li>Setiap data registrasi selesai disimpan, printer akan otomatis mencetak struk barcode yang berisi <strong>ID Unik Peserta, NIK, Nama, Jenis Kelamin, dan Tanggal Lahir</strong>.</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>5. Pencatatan Redflag & Keterangan Dokter</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <ul>
+                <li>Dokter pemeriksa echo membuka fitur <strong>"Screening & Redflag"</strong> pada HP/Tablet pribadi.</li>
+                <li>Arahkan kamera ke struk barcode pasien anak. Setelah ID terdeteksi, kamera otomatis mati dan memunculkan pop-up opsi screening.</li>
+                <li>Jika ditemukan tanda bahaya klinis (misal: keterlibatan katup patologis pada echo), centang kotak <span class="badge">YA, REDFLAG</span>.</li>
+                <li>Isi kolom keterangan klinis tambahan (misal: derajat regurgitasi katup atau gejala bising jantung). Kolom ini opsional namun sangat disarankan diisi jika berstatus redflag. Klik simpan untuk menyalakan kembali kamera pasien berikutnya.</li>
+            </ul>
+        </div>
+    </div>
+
+
+    <div class="section-title">B. TAHAP SETELAH SELESAI KEGIATAN (PASCA-SKRINING)</div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>1. Otorisasi & Kode Akses Upload Data</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <p>Untuk mencegah kebocoran data medis dan kiriman spam dari pihak luar, proses pengunggahan data rekap lokal ke server Cloud dikunci dengan sistem otorisasi:</p>
+            <ul>
+                <li>Gunakan kode akses otorisasi resmi tim yang sudah ditentukan.</li>
+                <li>Kode akses ini wajib dimasukkan ke dalam form input tepat sebelum menekan tombol unggah cloud ataupun saat akan mengakhiri sesi pembersihan memori lokal perangkat.</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>2. Dokumentasi Lumify & Ekstraksi Link Folder Drive</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <ol>
+                <li>Setelah seluruh pemeriksaan rampung, pindahkan file rekaman gambar/video echo dari mesin Lumify ke Google Drive. Satukan seluruh folder anak ke dalam satu folder induk utama kegiatan.</li>
+                <li>Copy link tautan folder induk utama tersebut dari Google Drive.</li>
+                <li>Buka menu 📂 <strong>Ekstraksi Link Folder</strong> pada halaman utama aplikasi.</li>
+                <li>Paste link folder Drive tersebut ke kolom yang disediakan, lalu klik <strong>"Ekstrak Daftar Folder"</strong>.</li>
+                <li>Sistem Apps Script akan mengekstrak seluruh nama subfolder (nama pasien/ID) beserta link URL-nya secara massal dalam hitungan detik.</li>
+                <li>Klik tombol 📋 <strong>Copy Hasil Ekstraksi</strong>, lalu paste (Ctrl+V) langsung di Google Sheets Master Data untuk memetakan dokumentasi digital secara otomatis.</li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="sop-card">
+        <div class="sop-header" onclick="toggleAccordion(this)">
+            <span>3. Verifikasi Akhir & Rekonsiliasi Data Cloud</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="sop-content">
+            <ol>
+                <li>Klik tombol ❌ <strong>Akhiri Sesi</strong> di bagian atas menu data entri, ketik kode akses valid, lalu pilih opsi ☁️ <strong>Upload Data ke Cloud</strong>.</li>
+                <li>Tunggu hingga muncul notifikasi sukses dari server Apps Script yang mengonfirmasi jumlah data yang berhasil masuk.</li>
+                <li><span class="highlight">PENTING: Jangan terburu-buru melakukan hapus data lokal!</span> PIC wajib membuka Google Sheets utama terlebih dahulu untuk memverifikasi secara visual bahwa baris data yang diunggah sudah sinkron dan lengkap sesuai jumlah riil anak yang diperiksa hari itu.</li>
+                <li>Jika data di Google Sheets dipastikan sudah aman dan utuh, kembali ke aplikasi, masukkan kembali kode akses di modal, lalu klik 🔴 <strong>Akhiri Sesi (Hapus Data Lokal)</strong> untuk membersihkan memori perangkat dan bersiap untuk sesi sekolah/hari berikutnya.</li>
+            </ol>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Fungsi Interaktif Buka Tutup Accordion SOP
+    function toggleAccordion(headerElement) {
+        const content = headerElement.nextElementSibling;
+        const arrow = headerElement.querySelector('.arrow');
+        
+        if (content.style.display === "block") {
+            content.style.display = "none";
+            arrow.innerText = "▼";
+        } else {
+            content.style.display = "block";
+            arrow.innerText = "▲";
+        }
+    }
+</script>
+</body>
+</html>

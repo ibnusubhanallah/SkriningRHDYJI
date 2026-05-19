@@ -5,9 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Scanner Redflag Dokter</title>
-    <link rel="manifest" href="manifest.json">
     <script src="html5-qrcode.min.js"></script>
-    <script src="install.js"></script>
     <style>
         :root {
             --primary: #0056b3;
@@ -168,7 +166,7 @@
                     <thead>
                         <tr>
                             <th>Waktu</th>
-                            <th>NIK</th>
+                            <th>ID</th>
                             <th>Nama</th>
                             <th>Redflag?</th>
                             <th>Keterangan</th>
@@ -187,7 +185,7 @@
     <div id="modalEntry" class="overlay">
         <div class="modal">
             <h3 id="entryTitle">Input Baru</h3>
-            <p id="displayNik" style="font-weight:bold; color:var(--primary)"></p>
+            <p id="displayId" style="font-weight:bold; color:var(--primary)"></p>
             <p id="displayName" style="font-weight:normal; color:var(--primary)"></p>
             <label style="color:var(--danger); font-weight:bold; display:block; margin:10px 0;">
                 <input type="checkbox" id="checkRedflag"> PASIEN REDFLAG
@@ -222,7 +220,7 @@
         </div>
     </div>
 
-    <script src="redflag.js"></script>
+    <script src="scanner.js"></script>
 </body>
 
 </html>

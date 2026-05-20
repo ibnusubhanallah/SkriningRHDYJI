@@ -43,26 +43,56 @@ if (urlParams.has('nik')) {
     });
 
     // --- AUTO PRINT & CLOSE ---
-    setTimeout(() => {
-        var printer = new Recta('1689628176', '1811')
-        printer.open().then(function () {
-            printer.align('center')
-                .bold(true)
-                .text('Screening RHD')
-                .bold(false)
-                .barcode('CODE128', nik)
-                .cut()
-                .print()
-        })
+    // setTimeout(() => {
+    //     var printer = new Recta('1689628176', '1811')
+    //     printer.open().then(function () {
+    //         printer.align('center')
+    //             .bold(true)
+    //             .text('Screening RHD')
+    //             .bold(false)
+    //             .barcode('CODE128', nik)
+    //             .cut()
+    //             .print()
+    //     })
 
-        // window.print();
+    //     // window.print();
 
-        // Karena dibuka dari Google Sheets, window.close() mungkin butuh izin.
-        // Kita beri delay agar proses spooling printer selesai.
-        setTimeout(() => {
-            // window.close();
-            // Fallback jika window.close diblokir browser:
-            // alert("Selesai! Silakan tutup tab ini dan kembali ke Google Sheets.");
-        }, 1000);
-    }, 500);
+    //     // Karena dibuka dari Google Sheets, window.close() mungkin butuh izin.
+    //     // Kita beri delay agar proses spooling printer selesai.
+    //     setTimeout(() => {
+    //         // window.close();
+    //         // Fallback jika window.close diblokir browser:
+    //         // alert("Selesai! Silakan tutup tab ini dan kembali ke Google Sheets.");
+    //     }, 1000);
+    // }, 500);
+
+    const element = document.getElementById('printArea');
+
+    // 1. Generate the PDF as a Blob instead of dataurlstring
+    html2pdf()
+        .from(element)
+        .output('blob')
+        .then(function (pdfBlob) {
+            // 2. Create an object URL from the Blob
+            const blobUrl = URL.createObjectURL(pdfBlob);
+
+            const iframe = document.createElement('iframe');
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+
+            iframe.onload = function () {
+                setTimeout(() => {
+                    iframe.contentWindow.focus();
+                    iframe.contentWindow.print();
+
+                    // Clean up memory and DOM
+                    URL.revokeObjectURL(blobUrl);
+                    document.body.removeChild(iframe);
+                }, 200);
+            };
+
+            // 3. Set the src to the Blob URL
+            iframe.src = blobUrl;
+        });
+
 }

@@ -37,62 +37,82 @@ if (urlParams.has('nik')) {
     JsBarcode("#barcodeCanvas", nik + "_" + nama, {
         format: "CODE128",
         width: 2,
-        height: 80,
+        height: 30,
         displayValue: false,
         margin: 0
     });
 
     // --- AUTO PRINT & CLOSE ---
-    // setTimeout(() => {
-    //     var printer = new Recta('1689628176', '1811')
-    //     printer.open().then(function () {
-    //         printer.align('center')
-    //             .bold(true)
-    //             .text('Screening RHD')
-    //             .bold(false)
-    //             .barcode('CODE128', nik)
-    //             .cut()
-    //             .print()
-    //     })
+    let printerMode = 'auto'; // Default ke auto
 
-    //     // window.print();
+    if (printerMode === 'auto') {
+        setTimeout(() => {
+            var printer = new Recta('1689628176', '1811')
+            printer.open().then(function () {
+                printer.align('center')
+                    .bold(true)
+                    .text('Screening RHD')
+                    .bold(false)
+                    .barcode('CODE128', nik + "_" + nama)
+                    .cut()
+                    .print()
+            })
 
-    //     // Karena dibuka dari Google Sheets, window.close() mungkin butuh izin.
-    //     // Kita beri delay agar proses spooling printer selesai.
-    //     setTimeout(() => {
-    //         // window.close();
-    //         // Fallback jika window.close diblokir browser:
-    //         // alert("Selesai! Silakan tutup tab ini dan kembali ke Google Sheets.");
-    //     }, 1000);
-    // }, 500);
+            // window.print();
 
-    const element = document.getElementById('printArea');
+            // Karena dibuka dari Google Sheets, window.close() mungkin butuh izin.
+            // Kita beri delay agar proses spooling printer selesai.
+            setTimeout(() => {
+                // window.close();
+                // Fallback jika window.close diblokir browser:
+                // alert("Selesai! Silakan tutup tab ini dan kembali ke Google Sheets.");
+            }, 1000);
+        }, 500);
+    } else
+        if (printerMode === 'semi-auto') {
+            const element = document.getElementById('printArea');
 
-    // 1. Generate the PDF as a Blob instead of dataurlstring
-    html2pdf()
-        .from(element)
-        .output('blob')
-        .then(function (pdfBlob) {
-            // 2. Create an object URL from the Blob
-            const blobUrl = URL.createObjectURL(pdfBlob);
+            // 1. Define your exact barcode label size (e.g., 50mm x 30mm)
+            // Change these numbers to match your physical label roll measurements!
+            const labelWidth = 48;
+            const labelHeight = 100;
 
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            document.body.appendChild(iframe);
-
-            iframe.onload = function () {
-                setTimeout(() => {
-                    iframe.contentWindow.focus();
-                    iframe.contentWindow.print();
-
-                    // Clean up memory and DOM
-                    URL.revokeObjectURL(blobUrl);
-                    document.body.removeChild(iframe);
-                }, 200);
+            const opt = {
+                margin: 0, // Force zero margins so it doesn't cut off
+                filename: 'barcode.pdf',
+                image: { type: 'jpeg', quality: 1 }, // Maximum quality for scannable barcodes
+                html2canvas: {
+                    scale: 3,      // Increase scale for crisp, scannable lines (crucial for barcodes)
+                    useCORS: true
+                },
+                jsPDF: {
+                    unit: 'mm',
+                    format: [labelWidth, labelHeight], // Force PDF page to match your label size
+                    orientation: 'landscape'
+                }
             };
 
-            // 3. Set the src to the Blob URL
-            iframe.src = blobUrl;
-        });
+            // 2. Generate and open in a new window
+            html2pdf()
+                .set(opt)
+                .from(element)
+                .output('blob')
+                .then(function (pdfBlob) {
+                    const blobUrl = URL.createObjectURL(pdfBlob);
+                    const printWindow = window.open(blobUrl, '_blank');
 
+                    if (printWindow) {
+                        printWindow.onload = function () {
+                            setTimeout(() => {
+                                printWindow.focus();
+                                printWindow.print();
+                                printWindow.close();
+                                URL.revokeObjectURL(blobUrl);
+                            }, 300);
+                        };
+                    } else {
+                        alert("Please allow pop-ups to print.");
+                    }
+                });
+        }
 }

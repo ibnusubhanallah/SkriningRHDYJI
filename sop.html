@@ -112,7 +112,7 @@
 <body>
 
 <div class="container">
-    <a href="javascript:history.back()" class="btn-back">⬅️ Kembali ke Menu Utama</a>
+    <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}" class="btn-back">⬅️ Kembali ke Menu Utama</a>
 
     <div class="header">
         <h1>STANDARD OPERATING PROCEDURE (SOP)</h1>
@@ -133,10 +133,10 @@
                 <li><strong>Meja Pemeriksaan Echo / Dokter:</strong> Dokter menggunakan mesin Lumify. Dokter memindai barcode anak untuk mengisi Patient ID di Lumify, melakukan pemeriksaan, lalu men-scan ulang di aplikasi screening untuk menentukan status <span class="badge">REDFLAG</span> / <span class="badge" style="background:#28a745">NORMAL</span>.</li>
             </ul>
             <div class="img-placeholder">
-                <img src="draft flow skrining RHD - regist n antro.jpg" alt="Denah Posisi Meja Skrining Lapangan" onerror="this.parentElement.innerHTML='[Tempat Gambar Denah Lapangan/Meja Skrining - Silakan upload file gambar dengan nama posisi_meja.png ke repo GitHub Anda]'">
+                <img src="img/draft flow skrining RHD - regist n antro.jpg" alt="Denah Posisi Meja Skrining Lapangan" onerror="this.parentElement.innerHTML='[Tempat Gambar Denah Lapangan/Meja Skrining - Silakan upload file gambar dengan nama posisi_meja.png ke repo GitHub Anda]'">
                 <p style="margin-top: 10px; font-size: 12px;">[Opsi 1: Meja Registrasi dan Antropometri dipisah. Dianjurkan untuk kegiatan skrining yang melibatkan banyak peserta]</p>
                 <br>
-                <img src="draft flow skrining RHD - regist only.jpg" alt="Denah Posisi Meja Skrining Lapangan" onerror="this.parentElement.innerHTML='[Tempat Gambar Denah Lapangan/Meja Skrining - Silakan upload file gambar dengan nama posisi_meja.png ke repo GitHub Anda]'">
+                <img src="img/draft flow skrining RHD - regist only.jpg" alt="Denah Posisi Meja Skrining Lapangan" onerror="this.parentElement.innerHTML='[Tempat Gambar Denah Lapangan/Meja Skrining - Silakan upload file gambar dengan nama posisi_meja.png ke repo GitHub Anda]'">
                 <p style="margin-top: 10px; font-size: 12px;">[Opsi 2: Meja Registrasi dan Antropometri digabung. Dianjurkan untuk kegiatan skrining yang melibatkan sedikit peserta]</p>
             </div>
         </div>
@@ -164,7 +164,7 @@
         </div>
         <div class="sop-content">
             <ul>
-                <li><strong>Standardisasi Kode Lokasi (Mutlak):</strong> Kode lokasi skrining (2 digit, 01-99) harus sudah disepakati di tingkat PIC Wilayah sebelum hari H dan <span class="highlight">tidak boleh berubah di tengah jalan</span> karena kode ini menyusun keunikan ID peserta.</li>
+                <li><strong>Standardisasi Kode Lokasi (Mutlak):</strong> Kode lokasi skrining (1-95) harus sudah disepakati di tingkat PIC Wilayah sebelum hari H dan <span class="highlight">tidak boleh berubah di tengah jalan</span> karena kode ini menyusun keunikan ID peserta.</li>
                 <li><strong>Disiplin Nomor Meja:</strong> Jika dalam 1 lokasi terdapat lebih dari 1 meja registrasi, pastikan nomor meja diinput berbeda (Meja 1, Meja 2, dst) untuk menghindari bentrok generate nomor urutan otomatis antar-tab/perangkat.</li>
                 <li><strong>Navigasi Cepat:</strong> Petugas diimbau membiasakan diri menggunakan tombol <span class="highlight">Tab</span> pada keyboard fisik untuk berpindah antarkolom input form demi efisiensi waktu entri.</li>
             </ul>
@@ -173,17 +173,52 @@
 
     <div class="sop-card">
         <div class="sop-header" onclick="toggleAccordion(this)">
-            <span>4. Barcode & Instalasi Printer Thermal Portable</span>
+            <span>4. Barcode & Instalasi Printer Thermal Lapangan</span>
             <span class="arrow">▼</span>
         </div>
         <div class="sop-content">
+            <h4 style="margin: 0 0 10px 0; color: var(--primary);">I. Persiapan Unduhan</h4>
+            <p>Ada beberapa file esensial yang harus diunduh dan disiapkan terlebih dahulu pada laptop perantara printer:</p>
+            <ul>
+                <li>
+                    <strong>Recta Host:</strong> Aplikasi utama yang menjembatani perintah cetak dari browser menuju mesin printer thermal. <br>
+                    🔗 <a href="https://github.com/adenvt/recta-host/releases/download/1.0.0/recta-host-win32-ia32-1.0.0-setup.exe" target="_blank" style="color: var(--primary); font-weight: bold;">Download Recta Host</a>
+                </li>
+                <li style="margin-top: 10px;">
+                    <strong>Zadig (Khusus OS Windows):</strong> Software utilitas untuk menyuntikkan driver WinUSB agar adapter USB printer thermal kasir dapat dikenali dengan baik oleh sistem Recta.<br>
+                    🔗 <a href="https://github.com/pbatard/libwdi/releases/download/v1.5.1/zadig-2.9.exe" target="_blank" style="color: var(--primary); font-weight: bold;">Download Zadig</a>
+                </li>
+            </ul>
+
+            <h4 style="margin: 20px 0 10px 0; color: var(--primary);">II. Langkah Instalasi Driver USB via Zadig</h4>
+            <p>Jika menggunakan printer thermal dengan koneksi kabel USB, konfigurasi driver wajib diganti ke WinUSB menggunakan langkah berikut:</p>
             <ol>
-                <li>Pastikan software <strong>Recta Host</strong> sudah terpasang dan berjalan aktif di laptop/perangkat perantara printer.</li>
-                <li>Nyalakan Bluetooth/sambungkan kabel USB printer thermal portable ukuran kertas 58mm.</li>
-                <li>Di aplikasi entri, klik tombol 🔌 <strong>Setting Printer</strong> di kanan atas, isi token <code>APPKEY</code> dan nomor <code>HOST/PORT</code> sesuai setelan Recta Host Anda.</li>
-                <li>Klik "Hubungkan Printer". Jika sukses, status akan berubah menjadi hijau (Printer Terhubung).</li>
-                <li>Setiap data registrasi selesai disimpan, printer akan otomatis mencetak struk barcode yang berisi <strong>ID Unik Peserta, NIK, Nama, Jenis Kelamin, dan Tanggal Lahir</strong>.</li>
+                <li>Hubungkan kabel USB printer thermal ke laptop, lalu nyalakan printer dengan menahan tombol power.</li>
+                <li>Buka aplikasi <strong>Zadig</strong> yang sudah diunduh tadi.</li>
+                <li>Pada menu bar atas, klik menu <span class="highlight">Options</span> lalu centang pilihan <span class="highlight">List All Devices</span>.</li>
+                <img src="img/zadig-list-all-device.webp" alt="Zadig List All Devices" onerror="this.innerHTML='[Tempat Gambar Tutorial Zadig - Silakan upload file gambar dengan nama zadig-tutorial.png ke repo GitHub Anda]'" style="margin: 15px 0; border: 1px solid var(--border); border-radius: 6px;">
+                <li>Buka dropdown menu perangkat, lalu pilih device printer Anda. <em>(Catatan: Umumnya terdeteksi dengan nama <strong>"???"</strong>. Jika ragu, silakan lepas dan colok kembali kabel USB printer untuk memastikan nama perangkat yang muncul/hilang).</em></li>
+                <img src="img/zadig-select-device.webp" alt="Zadig Select Device" onerror="this.innerHTML='[Tempat Gambar Tutorial Zadig - Silakan upload file gambar dengan nama zadig-tutorial.png ke repo GitHub Anda]'" style="margin: 15px 0; border: 1px solid var(--border); border-radius: 6px;">
+                <li>Pastikan target driver di sebelah kanan tanda panah hijau mengarah ke <strong>WinUSB</strong>.</li>
+                <li>Klik tombol <span class="highlight" style="background:#28a745; color:white;">Install Driver</span> atau <span class="highlight" style="background:#ffc107; color:black;">Replace Driver</span>. Tunggu proses instalasi hingga muncul notifikasi sukses.</li>
             </ol>
+
+            <h4 style="margin: 20px 0 10px 0; color: var(--primary);">III. Langkah Instalasi & Setup Recta Host</h4>
+            <ol>
+                <li>Buka file installer <code>recta-host-win32-ia32-1.0.0-setup.exe</code>.</li>
+                <li>Jika muncul proteksi keamanan berupa pop-up pesan <em>"Windows protected your PC"</em>, jangan panik. Cukup klik tulisan <span class="highlight">More info</span> lalu pilih tombol <span class="highlight">Run Anyway</span>.</li>
+                <img src="img/install-recta-warning.webp" alt="Recta Host Installer" onerror="this.innerHTML='[Tempat Gambar Tutorial Recta Host - Silakan upload file gambar dengan nama recta-host-tutorial.png ke repo GitHub Anda]'" style="margin: 15px 0; border: 1px solid var(--border); border-radius: 6px;">
+                <li>Tunggu proses loading instalasi berjalan hingga selesai.</li>
+                <li>Setelah selesai, jendela aplikasi <strong>Recta-Host</strong> akan terbuka secara otomatis di layar.</li>
+                <img src="img/recta-setting.webp" alt="Recta Host Settings" onerror="this.innerHTML='[Tempat Gambar Tutorial Recta Host - Silakan upload file gambar dengan nama recta-host-tutorial.png ke repo GitHub Anda]'" style="margin: 15px 0; border: 1px solid var(--border); border-radius: 6px;">
+                <li><strong>Pengaturan Port:</strong> Pada opsi <em>Printer Adapter</em>, ubah setelan menjadi <span class="highlight">USB</span> karena kita menggunakan kabel. Untuk kolom isian <code>VID</code> dan <code>PID</code>, silakan <span class="highlight">dikosongkan saja</span>.</li>
+                <li>Klik tombol 💾 <strong>Save</strong> di bagian bawah untuk mengunci konfigurasi adapter.</li>
+                <li>Klik tombol ▶️ <strong>Start</strong> untuk mengaktifkan layanan cetak. Jika konfigurasi sukses tanpa kendala, pada kotak Log di bagian bawah akan memunculkan teks hijau bertuliskan <span class="highlight" style="background:#e2f0d9; color:#385723;">"Service Started !"</span>.</li>
+                <li>Klik tombol 📄 <strong>Test-Print</strong> untuk melakukan uji coba cetak fisik kertas struk demi memastikan printer sudah merespons dengan normal.</li>
+            </ol>
+
+            <h4 style="margin: 20px 0 10px 0; color: var(--primary);">IV. Aktivasi di Aplikasi Skrining</h4>
+            <p>Setelah status Recta Host di laptop berbunyi <em>Service Started</em>, kembali ke halaman entri data aplikasi kita, buka pengaturan printer di pojok kanan atas, masukkan <span class="highlight">App Key</span> dan <span class="highlight">App Port</span> yang tertera di Recta Host, lalu klik hubungkan. Sistem siap memproduksi struk barcode otomatis setiap kali tombol simpan data pasien ditekan.</p>
         </div>
     </div>
 

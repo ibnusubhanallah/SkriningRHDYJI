@@ -62,7 +62,7 @@ function initSession() {
     const appport = document.getElementById("gwAppPort").value.trim();
 
     if (!wilayah) return alert("Pilih Wilayah terlebih dahulu!");
-    if (!/^\d{2}$/.test(kodeLokasi)) return alert("Kode lokasi harus angka 2 digit (01-99)!");
+    if (parseInt(kodeLokasi) > 95 || parseInt(kodeLokasi) < 1) return alert("Kode lokasi harus antara 1-95!");
     if (!modReg && !modAntro) return alert("Pilih minimal satu modul!");
     if (modReg && (!meja || parseInt(meja) < 1)) return alert("Isi nomor Meja Registrasi!");
 
@@ -204,25 +204,104 @@ function toggleAnamnesisNote(selectId, noteId) {
     document.getElementById(noteId).style.display = (val === "Ya") ? "block" : "none";
 }
 
+const CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+
+/**
+ * Mengubah angka desimal (Base 10) menjadi string Crockford's Base 32.
+ * @param {number} num - Angka positif yang akan di-encode.
+ * @returns {string} String hasil encode Crockford's Base 32.
+ */
+function encodeCrockford32(num) {
+    if (num === 0) return "0";
+    if (typeof num !== "number" || num < 0 || isNaN(num)) {
+        throw new Error("Input harus berupa angka bulat positif.");
+    }
+
+    let result = "";
+    let n = Math.floor(num);
+
+    while (n > 0) {
+        let remainder = n % 32;
+        result = CROCKFORD_ALPHABET.charAt(remainder) + result;
+        n = Math.floor(n / 32);
+    }
+
+    return result;
+}
+
+/**
+ * Mengubah string Crockford's Base 32 kembali menjadi angka desimal.
+ * @param {string} inputStr - String Crockford's Base 32 yang akan di-decode.
+ * @returns {number} Angka desimal hasil decode.
+ */
+function decodeCrockford32(inputStr) {
+    if (typeof inputStr !== "string" || inputStr.trim() === "") {
+        throw new Error("Input harus berupa string tidak kosong.");
+    }
+
+    // 1. Normalisasi: Ubah ke huruf besar, ganti I/L -> 1, O -> 0, hapus tanda hubung jika ada
+    let normalized = inputStr
+        .toUpperCase()
+        .replace(/-/g, "") // Menghapus tanda hubung (-) yang biasa dipakai di id panjang
+        .replace(/[IL]/g, "1")
+        .replace(/O/g, "0");
+
+    let result = 0;
+
+    // 2. Hitung nilai desimalnya
+    for (let i = 0; i < normalized.length; i++) {
+        let char = normalized.charAt(i);
+        let value = CROCKFORD_ALPHABET.indexOf(char);
+
+        // Jika ada karakter ilegal yang bukan bagian dari Base 32
+        if (value === -1) {
+            throw new Error(`Karakter tidak valid ditemukan: "${char}"`);
+        }
+
+        result = result * 32 + value;
+    }
+
+    return result;
+}
+
+let modeID = "7 digit"; // Default mode ID
+
 // --- MULTI-TAB SAFE ID GENERATOR ---
 function generateSequentialID() {
-    const wMap = { "Malang": 1, "Bekasi": 2, "Lampung": 3, "Minahasa Utara": 4 };
-    const d1 = wMap[configSession.wilayah] || 0;
-    const d2_3 = configSession.kodeLokasi;
-    const d4 = configSession.modReg ? configSession.meja : "0"; // 0 jika modul reg mati
-    const prefix = `${d1}${d2_3}${d4}`;
+    if (modeID === "7 digit") {
+        const wMap = { "Malang": 1, "Bekasi": 2, "Lampung": 3, "Minahasa Utara": 4 };
+        const d1 = wMap[configSession.wilayah] || 0;
+        const d2_3 = String(configSession.kodeLokasi).padStart(2, '0');
+        const d4 = configSession.modReg ? configSession.meja : "0"; // 0 jika modul reg mati
+        const prefix = `${d1}${d2_3}${d4}`;
 
-    let currentCounter = 1;
-    masterRecords.forEach(rec => {
-        if (rec.id && rec.id.startsWith(prefix)) {
-            const lastThree = parseInt(rec.id.substring(4, 7));
-            if (lastThree >= currentCounter) {
-                currentCounter = lastThree + 1;
+        let currentCounter = 1;
+        masterRecords.forEach(rec => {
+            if (rec.id && rec.id.startsWith(prefix)) {
+                const lastThree = parseInt(rec.id.substring(4, 7));
+                if (lastThree >= currentCounter) {
+                    currentCounter = lastThree + 1;
+                }
             }
-        }
-    });
+        });
 
-    return `${prefix}${String(currentCounter).padStart(3, '0')}`;
+        return `${prefix}${String(currentCounter).padStart(3, '0')}`;
+    } else if (modeID === "5 digit") {
+        const wMap = { "Malang": 1, "Lampung": 4, "Bekasi": 7, "Minahasa Utara": 10 };
+        const d1_2 = encodeCrockford32((wMap[configSession.wilayah] || 0) * 32) + (parseInt(configSession.kodeLokasi) || 0);
+        const d3 = configSession.modReg ? String(configSession.meja) : "0"; // 0 jika modul reg mati
+        const prefix = `${d1_2}${d3}`;
+
+        let currentCounter = 1;
+        masterRecords.forEach(rec => {
+            if (rec.id && rec.id.startsWith(prefix)) {
+                const lastTwo = decodeCrockford32(rec.id.substring(3, 5));
+                if (lastTwo >= currentCounter) {
+                    currentCounter = lastTwo + 1;
+                }
+            }
+        });
+    }
 }
 
 // ALUR BARU: Klik Tambah Langsung Amankan ID Ke LocalStorage (Mencegah Tab Balapan)
@@ -565,7 +644,7 @@ function connectPrinter() {
     });
 }
 
-function actualResetSesi() {   
+function actualResetSesi() {
     if (confirm("Reset sesi saat ini? Semua data rekap di perangkat ini akan dibersihkan secara permanen.")) {
         // Logika penghapusan localstorage
         localStorage.removeItem("skrining_config");
@@ -599,7 +678,7 @@ let idScannerInstance = new Html5Qrcode("idReader");
 function openScannerIdModal() {
     document.getElementById("modalScannerId").style.display = "flex";
     const config = { fps: 20, qrbox: { width: 260, height: 120 }, aspectRatio: 1.0 };
-    
+
     idScannerInstance.start(
         { facingMode: "environment" },
         config,

@@ -24,7 +24,7 @@ function startScanner() {
                 checkDuplicate(currentScanned);
                 stopScanner(); // Matikan kamera saat modal muncul agar tidak scan terus
                 if (navigator.vibrate) navigator.vibrate(100); // Getarkan perangkat sebagai feedback
-            }).catch(err => console.error("Kamera Error:", err));
+            }).catch(err => alert("Kamera Error:" + err));
     }
 }
 

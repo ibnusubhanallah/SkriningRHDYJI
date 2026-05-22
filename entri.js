@@ -3,6 +3,7 @@ let configSession = {};
 let masterRecords = [];
 let currentEditId = null;
 let isNewDraft = false;
+const modeID = "7 digit"; // Default mode ID, bisa diubah ke "5 digit" jika ingin pakai format ID pendek internal
 
 // Sinkronisasi Data Awal dari LocalStorage
 document.addEventListener("DOMContentLoaded", () => {
@@ -28,8 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("fId").addEventListener("blur", function (e) {
-        if (this.value.length > 0 && this.value.length !== 7 && e.relatedTarget.id !== "cancelBtn") {
-            alert("⚠️ Kesalahan Input: ID harus tepat 7 digit!");
+        if (this.value.length > 0 && (modeID == "7 digit" ? this.value.length !== 7 : this.value.length !== 5) && e.relatedTarget.id !== "cancelBtn") {
+            alert("⚠️ Kesalahan Input: ID harus tepat " + (modeID == "7 digit" ? "7" : "5") + " digit!");
             setTimeout(() => this.focus(), 10);
         }
     });
@@ -229,79 +230,73 @@ function encodeCrockford32(num) {
     return result;
 }
 
-/**
- * Mengubah string Crockford's Base 32 kembali menjadi angka desimal.
- * @param {string} inputStr - String Crockford's Base 32 yang akan di-decode.
- * @returns {number} Angka desimal hasil decode.
- */
-function decodeCrockford32(inputStr) {
-    if (typeof inputStr !== "string" || inputStr.trim() === "") {
-        throw new Error("Input harus berupa string tidak kosong.");
-    }
-
-    // 1. Normalisasi: Ubah ke huruf besar, ganti I/L -> 1, O -> 0, hapus tanda hubung jika ada
-    let normalized = inputStr
-        .toUpperCase()
-        .replace(/-/g, "") // Menghapus tanda hubung (-) yang biasa dipakai di id panjang
-        .replace(/[IL]/g, "1")
-        .replace(/O/g, "0");
-
-    let result = 0;
-
-    // 2. Hitung nilai desimalnya
-    for (let i = 0; i < normalized.length; i++) {
-        let char = normalized.charAt(i);
-        let value = CROCKFORD_ALPHABET.indexOf(char);
-
-        // Jika ada karakter ilegal yang bukan bagian dari Base 32
-        if (value === -1) {
-            throw new Error(`Karakter tidak valid ditemukan: "${char}"`);
+function decodeId5digit(id) {
+    /**
+     * Mengubah string Crockford's Base 32 kembali menjadi angka desimal.
+     * @param {string} inputStr - String Crockford's Base 32 yang akan di-decode.
+     * @returns {number} Angka desimal hasil decode.
+     */
+    function decodeCrockford32(inputStr) {
+        if (typeof inputStr !== "string" || inputStr.trim() === "") {
+            throw new Error("Input harus berupa string tidak kosong.");
         }
 
-        result = result * 32 + value;
+        // 1. Normalisasi: Ubah ke huruf besar, ganti I/L -> 1, O -> 0, hapus tanda hubung jika ada
+        let normalized = inputStr
+            .toUpperCase()
+            .replace(/-/g, "") // Menghapus tanda hubung (-) yang biasa dipakai di id panjang
+            .replace(/[IL]/g, "1")
+            .replace(/O/g, "0");
+
+        let result = 0;
+
+        // 2. Hitung nilai desimalnya
+        for (let i = 0; i < normalized.length; i++) {
+            let char = normalized.charAt(i);
+            let value = CROCKFORD_ALPHABET.indexOf(char);
+
+            // Jika ada karakter ilegal yang bukan bagian dari Base 32
+            if (value === -1) {
+                throw new Error(`Karakter tidak valid ditemukan: "${char}"`);
+            }
+
+            result = result * 32 + value;
+        }
+
+        return result;
     }
 
-    return result;
+    const d1 = Math.floor((decodeCrockford32(id.substring(0, 1)) - 1) / 3) + 1;
+    const d2_3 = (decodeCrockford32(id.substring(0, 2)) - ((((d1 - 1) * 3) + 1) * 32)).toString().padStart(2, '0');
+    const d4 = id.substring(2, 3);
+    const d5_7 = decodeCrockford32(id.substring(3, 5)).toString().padStart(3, '0');
+    return `${d1}${d2_3}${d4}${d5_7}`;
 }
-
-let modeID = "7 digit"; // Default mode ID
 
 // --- MULTI-TAB SAFE ID GENERATOR ---
 function generateSequentialID() {
-    if (modeID === "7 digit") {
-        const wMap = { "Malang": 1, "Bekasi": 2, "Lampung": 3, "Minahasa Utara": 4 };
-        const d1 = wMap[configSession.wilayah] || 0;
-        const d2_3 = String(configSession.kodeLokasi).padStart(2, '0');
-        const d4 = configSession.modReg ? configSession.meja : "0"; // 0 jika modul reg mati
-        const prefix = `${d1}${d2_3}${d4}`;
+    const wMap_7 = { "Malang": 1, "Bekasi": 2, "Lampung": 3, "Minahasa Utara": 4 };
+    const d1_7 = wMap_7[configSession.wilayah] || 0;
+    const d2_3_7 = String(configSession.kodeLokasi).padStart(2, '0');
+    const d4_7 = configSession.modReg ? configSession.meja : "0"; // 0 jika modul reg mati
+    const prefix_7 = `${d1_7}${d2_3_7}${d4_7}`;
 
-        let currentCounter = 1;
-        masterRecords.forEach(rec => {
-            if (rec.id && rec.id.startsWith(prefix)) {
-                const lastThree = parseInt(rec.id.substring(4, 7));
-                if (lastThree >= currentCounter) {
-                    currentCounter = lastThree + 1;
-                }
+    let currentCounter = 1;
+    masterRecords.forEach(rec => {
+        if (rec.id && rec.id.startsWith(prefix_7)) {
+            const lastThree = parseInt(rec.id.substring(4, 7));
+            if (lastThree >= currentCounter) {
+                currentCounter = lastThree + 1;
             }
-        });
+        }
+    });
 
-        return `${prefix}${String(currentCounter).padStart(3, '0')}`;
-    } else if (modeID === "5 digit") {
-        const wMap = { "Malang": 1, "Lampung": 4, "Bekasi": 7, "Minahasa Utara": 10 };
-        const d1_2 = encodeCrockford32((wMap[configSession.wilayah] || 0) * 32) + (parseInt(configSession.kodeLokasi) || 0);
-        const d3 = configSession.modReg ? String(configSession.meja) : "0"; // 0 jika modul reg mati
-        const prefix = `${d1_2}${d3}`;
+    const wMap_5 = { "Malang": 1, "Lampung": 4, "Bekasi": 7, "Minahasa Utara": 10 };
+    const d1_2_5 = encodeCrockford32((wMap_5[configSession.wilayah] || 0) * 32) + (parseInt(configSession.kodeLokasi) || 0);
+    const d3_5 = configSession.modReg ? String(configSession.meja) : "0"; // 0 jika modul reg mati/harusnya ga kepake ini
+    const prefix_5 = `${d1_2_5}${d3_5}`;
 
-        let currentCounter = 1;
-        masterRecords.forEach(rec => {
-            if (rec.id && rec.id.startsWith(prefix)) {
-                const lastTwo = decodeCrockford32(rec.id.substring(3, 5));
-                if (lastTwo >= currentCounter) {
-                    currentCounter = lastTwo + 1;
-                }
-            }
-        });
-    }
+    return [`${prefix_7}${String(currentCounter).padStart(3, '0')}`, `${prefix_5}${encodeCrockford32(currentCounter).padStart(2, '0')}`];
 }
 
 // ALUR BARU: Klik Tambah Langsung Amankan ID Ke LocalStorage (Mencegah Tab Balapan)
@@ -312,11 +307,12 @@ function createAndReserveNewPatient() {
         masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
         // 2. Buat ID unik berdasarkan data paling update
-        const newId = generateSequentialID();
+        const newId = generateSequentialID()[0]; // Kita pakai format ID 7-digit untuk registrasi
+        const newId_5 = generateSequentialID()[1]; // ID format pendek untuk keperluan internal/antro jika diperlukan
 
         // 3. Buat draft kosong
         const newDraft = {
-            id: newId, namaSingkat: "DRAFT KOSONG", isDraft: true,
+            id: newId, id_5: newId_5, namaSingkat: "DRAFT KOSONG", isDraft: true,
             nik: "", jk: "", ttl: "", namaLengkap: "", ortu: "", hp: "", pekerjaan: "",
             bb: "", tb: "", td: "", hr: "", demam: "", demamNote: "",
             tenggorokan: "", tenggorokanNote: "", obat: "", obatNote: "", rs: "", rsNote: ""
@@ -340,15 +336,17 @@ function loadRecordToEdit(id = null) {
     masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
     let record = null;
+    let shownId = null;
     if (id) {
         record = masterRecords.find(r => r.id === id);
         if (!record) return;
 
         currentEditId = id;
-        document.getElementById("formTitle").innerText = record.isDraft ? "Form Pasien Baru (ID: " + id + ")" : "Edit Data Pasien (ID: " + id + ")";
+        shownId = modeID == "7 digit" ? record.id : record.id_5;
+        document.getElementById("formTitle").innerText = record.isDraft ? "Form Pasien Baru (ID: " + shownId + ")" : "Edit Data Pasien (ID: " + shownId + ")";
         document.getElementById("formSection").style.display = "block";
 
-        document.getElementById("fId").value = record.id;
+        document.getElementById("fId").value = shownId;
         document.getElementById("fNamaSingkat").focus();
     } else {
         if (!record) {
@@ -427,7 +425,8 @@ function handleFormSubmit(e) {
     const idValue = document.getElementById("fId").value;
 
     const record = {
-        id: idValue,
+        id: (modeID == "7 digit" ? idValue : decodeId7digit(idValue)),
+        id_5: (modeID == "7 digit" ? null : idValue),
         namaSingkat: (document.getElementById("fNamaSingkat").value).toUpperCase().trim(),
         nik: document.getElementById("fNik").value || "",
         jk: document.getElementById("fJk").value || "",
@@ -662,11 +661,13 @@ function triggerRectaPrint(id) {
     printer.align('center')
         .text('SCREENING JANTUNG')
         .barcode('CODE128', record.id + "_" + record.namaSingkat)
+        .feed(1)
         .mode('A', true, true, true, false)
         .text(record.id)
-        .mode('A', false, false, false, false)
-        .align('left')
         .text("Nama: " + record.namaSingkat)
+        .mode('A', false, false, false, false)
+        .feed(1)
+        .align('left')
         .text("JK: " + record.jk)
         .text("T. Lahir: " + record.ttl)
         .feed(4)

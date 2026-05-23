@@ -115,7 +115,6 @@
         .btn-upload {
             background: var(--primary);
             color: white;
-            margin-bottom: 10px;
         }
 
         .btn-danger {
@@ -153,14 +152,18 @@
             font-weight: bold;
             margin-bottom: 20px;
         }
-        .btn-back:hover { color: var(--text); }
+
+        .btn-back:hover {
+            color: var(--text);
+        }
     </style>
 </head>
 
 <body>
 
     <div class="container">
-        <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}" class="btn-back">⬅️ Kembali ke Menu Utama</a>
+        <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}"
+            class="btn-back">⬅️ Kembali ke Menu Utama</a>
 
         <h3 style="text-align: center;">Menu Dokter: Scan Pasien</h3>
 
@@ -170,8 +173,10 @@
         <div class="recap-section">
             <div class="flex-between">
                 <strong>List Hasil Screening</strong>
-                <button class="btn btn-upload" id="btnGoToUpload" onclick="openUploadForm()">Upload Data ke
-                    Cloud</button>
+                <div>
+                    <button type="button" id="btnScanIdPasien" onclick="openScannerIdModal()"
+                        style="display: none; background: #6c757d; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 23px; margin-right: 10px;">📷</button>
+                </div>
             </div>
             <div style="overflow-x: auto;">
                 <table id="recapTable">
@@ -190,7 +195,11 @@
                 </table>
             </div>
             <br>
-            <button class="btn btn-clear" onclick="clearData()">Reset/Hapus Semua Data</button>
+            <div style="display: flex; justify-content: space-between;">
+                <button class="btn btn-clear" onclick="clearData()">Reset/Hapus Semua Data</button>
+                <button class="btn btn-upload" id="btnGoToUpload" onclick="openUploadForm()">Upload Data ke
+                    Cloud</button>
+            </div>
         </div>
     </div>
 

@@ -3,7 +3,7 @@ let configSession = {};
 let masterRecords = [];
 let currentEditId = null;
 let isNewDraft = false;
-const modeID = "7 digit"; // Default mode ID, bisa diubah ke "5 digit" jika ingin pakai format ID pendek internal
+const modeID = "5 digit"; // Default mode ID, bisa diubah ke "5 digit" jika ingin pakai format ID pendek internal
 
 // Sinkronisasi Data Awal dari LocalStorage
 document.addEventListener("DOMContentLoaded", () => {
@@ -23,7 +23,22 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("fNik").addEventListener("blur", function () {
         if (this.value.length > 0 && this.value.length !== 16) {
             resetAutoNikFields();
-            alert("⚠️ Kesalahan Input: NIK harus tepat 16 digit!");
+            alert("⚠️ Kesalahan Input: NIK Peserta harus tepat 16 digit!");
+            setTimeout(() => this.focus(), 10);
+        } else if (this.value.substring(15,16) == '0') {
+            resetAutoNikFields();
+            alert("⚠️ Kesalahan Input: NIK Peserta tidak valid, digit terakhir tidak boleh 0!");
+            setTimeout(() => this.focus(), 10);
+        }
+    });
+
+    document.getElementById("fNikOrtu").addEventListener("blur", function () {
+        if (this.value.length > 0 && this.value.length !== 16) {
+            alert("⚠️ Kesalahan Input: NIK Orang Tua / Wali harus tepat 16 digit!");
+            setTimeout(() => this.focus(), 10);
+        } else if (this.value.substring(15,16) == '0') {
+            resetAutoNikFields();
+            alert("⚠️ Kesalahan Input: NIK Orang Tua / Wali tidak valid, digit terakhir tidak boleh 0!");
             setTimeout(() => this.focus(), 10);
         }
     });
@@ -38,8 +53,13 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("fNik").addEventListener("input", function () {
         if (this.value.length === 16) {
             parseDataFromNik(this.value);
+        } else {
+            resetAutoNikFields();
         }
     });
+
+    document.getElementById("maxNameLength").innerText = modeID === "7 digit" ? "6" : "8"; // Update teks batas maksimal karakter nama singkat sesuai dengan atribut maxlength
+    document.getElementById("fNamaSingkat").setAttribute("maxlength", modeID === "7 digit" ? "6" : "8");
 });
 
 // --- LOGIKA GATEWAY ---
@@ -64,6 +84,7 @@ function initSession() {
 
     if (!wilayah) return alert("Pilih Wilayah terlebih dahulu!");
     if (parseInt(kodeLokasi) > 95 || parseInt(kodeLokasi) < 1) return alert("Kode lokasi harus antara 1-95!");
+    if (parseInt(meja) < 1 || parseInt(meja) > 9) return alert("Nomor meja harus antara 1-9!");
     if (!modReg && !modAntro) return alert("Pilih minimal satu modul!");
     if (modReg && (!meja || parseInt(meja) < 1)) return alert("Isi nomor Meja Registrasi!");
 
@@ -207,27 +228,40 @@ function toggleAnamnesisNote(selectId, noteId) {
 
 const CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
-/**
- * Mengubah angka desimal (Base 10) menjadi string Crockford's Base 32.
- * @param {number} num - Angka positif yang akan di-encode.
- * @returns {string} String hasil encode Crockford's Base 32.
- */
-function encodeCrockford32(num) {
-    if (num === 0) return "0";
-    if (typeof num !== "number" || num < 0 || isNaN(num)) {
-        throw new Error("Input harus berupa angka bulat positif.");
+function encodeId5digit(id) {
+    /**
+     * Mengubah angka desimal (Base 10) menjadi string Crockford's Base 32.
+     * @param {number} num - Angka positif yang akan di-encode.
+     * @returns {string} String hasil encode Crockford's Base 32.
+     */
+    function encodeCrockford32(num) {
+        if (num === 0) return "0";
+        if (typeof num !== "number" || num < 0 || isNaN(num)) {
+            throw new Error("Input harus berupa angka bulat positif.");
+        }
+
+        let result = "";
+        let n = Math.floor(num);
+
+        while (n > 0) {
+            let remainder = n % 32;
+            result = CROCKFORD_ALPHABET.charAt(remainder) + result;
+            n = Math.floor(n / 32);
+        }
+
+        return result;
     }
 
-    let result = "";
-    let n = Math.floor(num);
-
-    while (n > 0) {
-        let remainder = n % 32;
-        result = CROCKFORD_ALPHABET.charAt(remainder) + result;
-        n = Math.floor(n / 32);
-    }
-
-    return result;
+    id = id.toString(); // 7 digit
+    // 101 -> 11 (1-1 = 0 *30 +10 = 1*32 + 1 = 11)
+    // 195 -> 3Z (1-1 = 0 *30 +10 = 1*32 + 95 = 3Z)
+    // 201 -> 41 (41 - 40 = 1) (2 -> 40 how? 2-1 *30 +10 = 40)
+    // 295 -> 4Z (4Z - 40 = 2Z -> 95)
+    // 495 -> CZ  (4-1 = 3 *30 +10 = 100 + 95 = 195)
+    const d1_2 = encodeCrockford32(((((parseInt(id.substring(0, 1)) - 1) * 3) + 1) * 32) + parseInt(id.substring(1, 3)));
+    const d3 = id.substring(3, 4);
+    const d4_5 = encodeCrockford32(parseInt(id.substring(4, 7))).padStart(2, '0');
+    return `${d1_2}${d3}${d4_5}`; //hasilnya 5 digit
 }
 
 function decodeId5digit(id) {
@@ -266,6 +300,7 @@ function decodeId5digit(id) {
         return result;
     }
 
+    id = id.toString()
     const d1 = Math.floor((decodeCrockford32(id.substring(0, 1)) - 1) / 3) + 1;
     const d2_3 = (decodeCrockford32(id.substring(0, 2)) - ((((d1 - 1) * 3) + 1) * 32)).toString().padStart(2, '0');
     const d4 = id.substring(2, 3);
@@ -291,12 +326,10 @@ function generateSequentialID() {
         }
     });
 
-    const wMap_5 = { "Malang": 1, "Lampung": 4, "Bekasi": 7, "Minahasa Utara": 10 };
-    const d1_2_5 = encodeCrockford32((wMap_5[configSession.wilayah] || 0) * 32) + (parseInt(configSession.kodeLokasi) || 0);
-    const d3_5 = configSession.modReg ? String(configSession.meja) : "0"; // 0 jika modul reg mati/harusnya ga kepake ini
-    const prefix_5 = `${d1_2_5}${d3_5}`;
+    const id_7digit = `${prefix_7}${String(currentCounter).padStart(3, '0')}`;
+    const id_5digit = `${encodeId5digit(id_7digit)}`;
 
-    return [`${prefix_7}${String(currentCounter).padStart(3, '0')}`, `${prefix_5}${encodeCrockford32(currentCounter).padStart(2, '0')}`];
+    return [id_7digit, id_5digit];
 }
 
 // ALUR BARU: Klik Tambah Langsung Amankan ID Ke LocalStorage (Mencegah Tab Balapan)
@@ -425,7 +458,7 @@ function handleFormSubmit(e) {
     const idValue = document.getElementById("fId").value;
 
     const record = {
-        id: (modeID == "7 digit" ? idValue : decodeId7digit(idValue)),
+        id: (modeID == "7 digit" ? idValue : decodeId5digit(idValue)),
         id_5: (modeID == "7 digit" ? null : idValue),
         namaSingkat: (document.getElementById("fNamaSingkat").value).toUpperCase().trim(),
         nik: document.getElementById("fNik").value || "",

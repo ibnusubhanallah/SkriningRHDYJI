@@ -265,14 +265,18 @@
             font-weight: bold;
             margin-bottom: 20px;
         }
-        .btn-back:hover { color: var(--text); }
+
+        .btn-back:hover {
+            color: var(--text);
+        }
     </style>
 </head>
 
 <body>
     <div class="container">
         <div id="gatewayScreen" class="card gateway-box">
-            <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}" class="btn-back">⬅️ Kembali ke Menu Utama</a>
+            <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}"
+                class="btn-back">⬅️ Kembali ke Menu Utama</a>
             <h2>Setup Konfigurasi Sesi</h2>
             <div class="form-group">
                 <label for="gwWilayah">Wilayah *</label>
@@ -298,7 +302,7 @@
             <div id="mejaFieldWrapper">
                 <div class="form-group">
                     <label for="gwMeja">Meja Registrasi Ke- *</label>
-                    <input type="number" id="gwMeja" min="1" placeholder="Contoh: 1">
+                    <input type="number" id="gwMeja" min="1" max="9" placeholder="Contoh: 1">
                 </div>
                 <div class="form-group">
                     <label><input type="checkbox" id="usePrinter" onchange="togglePrinterField()"> Terhubung ke Printer
@@ -337,6 +341,19 @@
                 </div>
             </div>
 
+            <div id="modalScannerId" style="display: none;
+                /* position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; */
+                ">
+                <div class="card"
+                    style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+                    <h3 style="margin-top:0;">Scan Barcode Struk Pasien</h3>
+                    <div id="idReader" style="width: 100%; border-radius: 8px; overflow: hidden; background: black;">
+                    </div>
+                    <!-- <button class="btn" onclick="closeScannerIdModal()"
+                        style="width: 100%; margin-top: 15px; background: #bbb; color: black;">Batal</button> -->
+                </div>
+            </div>
+
             <div id="formSection" class="card">
                 <h3 id="formTitle">Form Input Skrining</h3>
                 <form id="entryForm" onsubmit="handleFormSubmit(event)">
@@ -345,12 +362,11 @@
                             <label for="fId">ID Peserta: *</label>
                             <div style="display: flex; gap: 8px;">
                                 <input type="text" id="fId" required maxlength="7" minlength="7" disabled>
-                                <button type="button" id="btnScanIdPasien" onclick="openScannerIdModal()"
-                                    style="display: none; background: #6c757d; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 23px;">📷</button>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="fNamaSingkat">Nama Singkat (Maks 6 Huruf) *</label>
+                            <label for="fNamaSingkat">Nama Singkat Peserta (Maks <span id="maxNameLength">6</span>
+                                Huruf) *</label>
                             <input type="text" id="fNamaSingkat" maxlength="6">
                         </div>
                     </div>
@@ -359,12 +375,12 @@
                         <h4>[Modul] Data Registrasi Pasien</h4>
                         <div class="grid-2">
                             <div class="form-group">
-                                <label for="fNik">NIK (16 Digit, Angka Only)</label>
-                                <input type="text" id="fNik" maxlength="16" placeholder="Masukkan 16 digit NIK"
+                                <label for="fNik">NIK Peserta (16 Digit, Angka Only)</label>
+                                <input type="text" id="fNik" maxlength="16" placeholder="Masukkan 16 digit NIK Peserta"
                                     oninput="this.value = this.value.replace(/\D/g, '')">
                             </div>
                             <div class="form-group">
-                                <label for="fNamaLengkap">Nama Lengkap Anak *</label>
+                                <label for="fNamaLengkap">Nama Lengkap Peserta *</label>
                                 <input type="text" id="fNamaLengkap">
                             </div>
                         </div>
@@ -395,6 +411,11 @@
                             </div>
                         </div>
                         <div class="grid-2">
+                            <div class="form-group">
+                                <label for="fNikOrtu">NIK Orang Tua / Wali</label>
+                                <input type="text" id="fNikOrtu" maxlength="16"
+                                    oninput="this.value = this.value.replace(/\D/g, '')">
+                            </div>
                             <div class="form-group">
                                 <label for="fHp">No. HP</label>
                                 <input type="text" id="fHp">
@@ -484,8 +505,12 @@
             <div class="card">
                 <div class="table-header-flex">
                     <h3 style="margin:0;">Daftar Hasil Entri Pasien</h3>
-                    <button class="btn btn-primary" id="btnOpenForm" onclick="createAndReserveNewPatient()">+ Tambah
-                        Data Pasien</button>
+                    <div style="display: flex;">
+                        <button type="button" id="btnScanIdPasien" onclick="openScannerIdModal()"
+                            style="display: none; background: #6c757d; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 23px; margin-right: 10px;">📷</button>
+                        <button class="btn btn-primary" id="btnOpenForm" onclick="createAndReserveNewPatient()">+ Tambah
+                            Data Pasien</button>
+                    </div>
                 </div>
                 <div class="table-wrapper">
                     <table id="mainTable">
@@ -537,17 +562,6 @@
             <button class="btn btn-success" onclick="connectPrinter()" style="width: 100%;">Hubungkan Printer</button>
             <button class="btn" onclick="closeModal('modalPrinter')"
                 style="width: 100%; margin-top: 10px; background: #bbb; color: black;">Tutup</button>
-        </div>
-    </div>
-
-    <div id="modalScannerId"
-        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;">
-        <div class="modal"
-            style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
-            <h3 style="margin-top:0;">Scan Barcode Struk Pasien</h3>
-            <div id="idReader" style="width: 100%; border-radius: 8px; overflow: hidden; background: black;"></div>
-            <button class="btn" onclick="closeScannerIdModal()"
-                style="width: 100%; margin-top: 15px; background: #bbb; color: black;">Batal</button>
         </div>
     </div>
 

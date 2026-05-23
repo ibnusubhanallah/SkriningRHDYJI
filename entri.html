@@ -373,15 +373,21 @@
 
                     <div id="subFormRegistrasi">
                         <h4>[Modul] Data Registrasi Pasien</h4>
+                        <div class="form-group">
+                            <label for="fNik">NIK Peserta (16 Digit, Angka Only)</label>
+                            <input type="text" id="fNik" maxlength="16" placeholder="Masukkan 16 digit NIK Peserta"
+                                oninput="this.value = this.value.replace(/\D/g, '')">
+                        </div>
                         <div class="grid-2">
-                            <div class="form-group">
-                                <label for="fNik">NIK Peserta (16 Digit, Angka Only)</label>
-                                <input type="text" id="fNik" maxlength="16" placeholder="Masukkan 16 digit NIK Peserta"
-                                    oninput="this.value = this.value.replace(/\D/g, '')">
-                            </div>
                             <div class="form-group">
                                 <label for="fNamaLengkap">Nama Lengkap Peserta *</label>
                                 <input type="text" id="fNamaLengkap">
+                            </div>
+                            <div class="form-group">
+                                <label for="fNamaSekolah">Nama Sekolah</label>
+                                <input type="text" id="fNamaSekolah" list="daftar-sekolah">
+                                <datalist id="daftar-sekolah">
+                                </datalist>
                             </div>
                         </div>
                         <div class="grid-2">

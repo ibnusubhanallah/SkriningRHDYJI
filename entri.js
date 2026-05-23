@@ -4,6 +4,13 @@ let masterRecords = [];
 let currentEditId = null;
 let isNewDraft = false;
 const modeID = "5 digit"; // Default mode ID, bisa diubah ke "5 digit" jika ingin pakai format ID pendek internal
+let listSekolah = {
+    "Malang": [
+        "SD 1 Malang",
+        "SD 2 Malang"
+    ],
+    "Bekasi": []
+}
 
 // Sinkronisasi Data Awal dari LocalStorage
 document.addEventListener("DOMContentLoaded", () => {
@@ -97,6 +104,8 @@ function initSession() {
         localStorage.setItem("skrining_records", JSON.stringify([]));
         masterRecords = [];
     }
+
+    document.getElementById("daftar-sekolah").innerHTML = listSekolah[configSession.wilayah]?.map(school => `<option value="${school}"></option>`).join('') || '';
 
     showMainDashboard();
 }

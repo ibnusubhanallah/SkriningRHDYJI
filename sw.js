@@ -6,7 +6,7 @@ const ASSETS = [
     'img/install-recta-warning.webp',
     'img/recta-setting.webp',
     'img/zadig-list-all-device.webp',
-    'img/zadig-select-device.webp',
+    'img/zadig-select-device.jpg',
     'library/html5-qrcode.min.js',
     'library/JsBarcode.all.min.js',
     'library/recta.js',

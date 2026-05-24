@@ -12,6 +12,36 @@ let listSekolah = {
     "Bekasi": []
 }
 
+/** 
+ * kalau ada perubahan form, fungsi2 berikut ini harus ikut berubah:
+ * createAndReserveNewPatient check
+ * loadRecordToEdit check
+ * handleFormSubmit check
+ * buildTableHeaders check
+ * renderTableRows check
+ * 
+ * yeeey udah ga harus ngubah semuanya wkwk
+ * */
+const recordLabel = {
+    regis: {
+        nik: ["NIK Peserta", "fNik"],
+        namaLengkap: ["Nama Lengkap", "fNamaLengkap"],
+        namaSekolah: ["Nama Sekolah", "fNamaSekolah"],
+        jk: ["Jenis Kelamin", "fJk"],
+        ttl: ["Tanggal Lahir", "fTtl"],
+        ortu: ["Nama Ortu", "fOrtu"],
+        nikOrtu: ["NIK Ortu", "fNikOrtu"],
+        pekerjaan: ["Pekerjaan Ortu", "fPekerjaan"],
+        hp: ["No. HP", "fHp"],
+    },
+    antro: {
+        bb: ["BB (kg)", "fBb"],
+        tb: ["TB (cm)", "fTb"],
+        td: ["T. Darah (mmHg)", "fTd"],
+        hr: ["HR (bpm)", "fHr"],
+    }
+}
+
 // Sinkronisasi Data Awal dari LocalStorage
 document.addEventListener("DOMContentLoaded", () => {
     const savedConfig = localStorage.getItem("skrining_config");
@@ -32,7 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
             resetAutoNikFields();
             alert("⚠️ Kesalahan Input: NIK Peserta harus tepat 16 digit!");
             setTimeout(() => this.focus(), 10);
-        } else if (this.value.substring(15,16) == '0') {
+        } else if (this.value.substring(15, 16) == '0') {
             resetAutoNikFields();
             alert("⚠️ Kesalahan Input: NIK Peserta tidak valid, digit terakhir tidak boleh 0!");
             setTimeout(() => this.focus(), 10);
@@ -43,7 +73,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (this.value.length > 0 && this.value.length !== 16) {
             alert("⚠️ Kesalahan Input: NIK Orang Tua / Wali harus tepat 16 digit!");
             setTimeout(() => this.focus(), 10);
-        } else if (this.value.substring(15,16) == '0') {
+        } else if (this.value.substring(15, 16) == '0') {
             resetAutoNikFields();
             alert("⚠️ Kesalahan Input: NIK Orang Tua / Wali tidak valid, digit terakhir tidak boleh 0!");
             setTimeout(() => this.focus(), 10);
@@ -354,10 +384,9 @@ function createAndReserveNewPatient() {
 
         // 3. Buat draft kosong
         const newDraft = {
-            id: newId, id_5: newId_5, namaSingkat: "DRAFT KOSONG", isDraft: true,
-            nik: "", jk: "", ttl: "", namaLengkap: "", ortu: "", hp: "", pekerjaan: "",
-            bb: "", tb: "", td: "", hr: "", demam: "", demamNote: "",
-            tenggorokan: "", tenggorokanNote: "", obat: "", obatNote: "", rs: "", rsNote: ""
+            id: newId,
+            id_5: newId_5,
+            namaSingkat: "DRAFT KOSONG", isDraft: true
         };
 
         // 4. Langsung kunci ke Storage utama
@@ -401,13 +430,10 @@ function loadRecordToEdit(id = null) {
 
     if (configSession.modReg) {
         document.getElementById("fNamaSingkat").value = record.isDraft ? "" : record.namaSingkat;
-        document.getElementById("fNik").value = record.nik;
-        document.getElementById("fJk").value = record.jk;
-        document.getElementById("fTtl").value = record.ttl;
-        document.getElementById("fNamaLengkap").value = record.isDraft ? "" : record.namaLengkap;
-        document.getElementById("fOrtu").value = record.ortu;
-        document.getElementById("fHp").value = record.hp;
-        document.getElementById("fPekerjaan").value = record.pekerjaan;
+
+        for (const [key, [label, fieldId]] of Object.entries(recordLabel.regis)) {
+            document.getElementById(fieldId).value = record.isDraft ? "" : record[key] || "";
+        }
 
         if (record.nik && record.nik.length === 16) {
             document.getElementById("fJk").disabled = true;
@@ -419,25 +445,24 @@ function loadRecordToEdit(id = null) {
     }
 
     if (configSession.modAntro && record) {
-        document.getElementById("fBb").value = record.bb;
-        document.getElementById("fTb").value = record.tb;
-        document.getElementById("fTd").value = record.td;
-        document.getElementById("fHr").value = record.hr;
+        for (const [key, [label, fieldId]] of Object.entries(recordLabel.antro)) {
+            document.getElementById(fieldId).value = record.isDraft ? "" : record[key] || "";
+        }
 
-        document.getElementById("fDemam").value = record.demam;
-        document.getElementById("fDemamNote").value = record.demamNote === "-" ? "" : record.demamNote;
+        document.getElementById("fDemam").value = record.isDraft ? "" : record.demam;
+        document.getElementById("fDemamNote").value = record.isDraft ? "" : (record.demamNote === "-" ? "" : record.demamNote);
         toggleAnamnesisNote('fDemam', 'fDemamNote');
 
-        document.getElementById("fTenggorokan").value = record.tenggorokan;
-        document.getElementById("fTenggorokanNote").value = record.tenggorokanNote === "-" ? "" : record.tenggorokanNote;
+        document.getElementById("fTenggorokan").value = record.isDraft ? "" : record.tenggorokan;
+        document.getElementById("fTenggorokanNote").value = record.isDraft ? "" : (record.tenggorokanNote === "-" ? "" : record.tenggorokanNote);
         toggleAnamnesisNote('fTenggorokan', 'fTenggorokanNote');
 
-        document.getElementById("fObat").value = record.obat;
-        document.getElementById("fObatNote").value = record.obatNote === "-" ? "" : record.obatNote;
+        document.getElementById("fObat").value = record.isDraft ? "" : record.obat;
+        document.getElementById("fObatNote").value = record.isDraft ? "" : (record.obatNote === "-" ? "" : record.obatNote);
         toggleAnamnesisNote('fObat', 'fObatNote');
 
-        document.getElementById("fRs").value = record.rs;
-        document.getElementById("fRsNote").value = record.rsNote === "-" ? "" : record.rsNote;
+        document.getElementById("fRs").value = record.isDraft ? "" : record.rs;
+        document.getElementById("fRsNote").value = record.isDraft ? "" : (record.rsNote === "-" ? "" : record.rsNote);
         toggleAnamnesisNote('fRs', 'fRsNote');
     }
 
@@ -469,19 +494,24 @@ function handleFormSubmit(e) {
     const record = {
         id: (modeID == "7 digit" ? idValue : decodeId5digit(idValue)),
         id_5: (modeID == "7 digit" ? null : idValue),
+        timestamp: Number(new Date()),
         namaSingkat: (document.getElementById("fNamaSingkat").value).toUpperCase().trim(),
-        nik: document.getElementById("fNik").value || "",
-        jk: document.getElementById("fJk").value || "",
-        ttl: document.getElementById("fTtl").value || "",
-        namaLengkap: document.getElementById("fNamaLengkap").value.trim() || "",
-        ortu: document.getElementById("fOrtu").value.trim() || "",
-        hp: document.getElementById("fHp").value.trim() || "",
-        pekerjaan: document.getElementById("fPekerjaan").value.trim() || "",
+        isDraft: false, // Setiap submit berarti data sudah final, bukan draft lagi
 
-        bb: document.getElementById("fBb").value.trim() || "",
-        tb: document.getElementById("fTb").value.trim() || "",
-        td: document.getElementById("fTd").value.trim() || "",
-        hr: document.getElementById("fHr").value.trim() || "",
+        // nik: document.getElementById("fNik").value || "",
+        // namaLengkap: document.getElementById("fNamaLengkap").value.trim() || "",
+        // namaSekolah: document.getElementById("fNamaSekolah").value.trim() || "",
+        // jk: document.getElementById("fJk").value || "",
+        // ttl: document.getElementById("fTtl").value || "",
+        // ortu: document.getElementById("fOrtu").value.trim() || "",
+        // nikOrtu: document.getElementById("fNikOrtu").value.trim() || "",
+        // pekerjaan: document.getElementById("fPekerjaan").value.trim() || "",
+        // hp: document.getElementById("fHp").value.trim() || "",
+
+        // bb: document.getElementById("fBb").value.trim() || "",
+        // tb: document.getElementById("fTb").value.trim() || "",
+        // td: document.getElementById("fTd").value.trim() || "",
+        // hr: document.getElementById("fHr").value.trim() || "",
 
         demam: document.getElementById("fDemam").value || "",
         demamNote: document.getElementById("fDemamNote").value.trim() || "",
@@ -493,7 +523,17 @@ function handleFormSubmit(e) {
         rsNote: document.getElementById("fRsNote").value.trim() || ""
     };
 
-    const index = masterRecords.findIndex(r => r.id === idValue);
+    for (let key in recordLabel.regis) {
+        record[key] = document.getElementById(recordLabel.regis[key][1]).value.trim() || "";
+
+    }
+
+    for (let key in recordLabel.antro) {
+        record[key] = document.getElementById(recordLabel.antro[key][1]).value.trim() || "";
+
+    }
+
+    const index = masterRecords.findIndex(r => r.id === (modeID == "7 digit" ? idValue : decodeId5digit(idValue)));
     if (index !== -1) {
         masterRecords[index] = record; // Ganti draft/data eksis dengan data final
     } else {
@@ -508,7 +548,7 @@ function handleFormSubmit(e) {
     renderTableRows();
 
     if (configSession.modReg && printer) {
-        triggerRectaPrint(idValue);
+        triggerRectaPrint((modeID == "7 digit" ? idValue : decodeId5digit(idValue)));
     }
     // alert("✅ Data berhasil disimpan di LocalStorage perangkat!");
 }
@@ -524,10 +564,15 @@ function buildTableHeaders() {
     ];
 
     if (configSession.modReg) {
-        headers.push("<th>NIK</th>", "<th>JK</th>", "<th>Tanggal Lahir</th>", "<th>Nama Lengkap</th>", "<th>Orang Tua</th>", "<th>No. HP</th>", "<th>Pekerjaan Ortu</th>");
+        for (let key in recordLabel.regis) {
+            headers.push(`<th>${recordLabel.regis[key][0]}</th>`);
+        }
     }
     if (configSession.modAntro) {
-        headers.push("<th>BB (kg)</th>", "<th>TB (cm)</th>", "<th>T. Darah</th>", "<th>HR (bpm)</th>", "<th>Demam</th>", "<th>Sakit Tenggorokan</th>", "<th>Konsumsi Obat</th>", "<th>Rawat RS</th>");
+        for (let key in recordLabel.antro) {
+            headers.push(`<th>${recordLabel.antro[key][0]}</th>`);
+        }
+        headers.push("<th>Demam</th>", "<th>Sakit Tenggorokan</th>", "<th>Konsumsi Obat</th>", "<th>Rawat RS</th>");
     }
     tr.innerHTML = headers.join("");
 }
@@ -556,18 +601,24 @@ function renderTableRows() {
             actionContent += `<button onclick="triggerRectaPrint('${rec.id}')" title="Cetak Barcode" style="border:none; background:none; cursor:pointer; font-size:15px;">🖨️</button>`;
         }
 
+        let shownId = modeID == '7 digit' ? rec.id : rec.id_5
+
         let rowCells = [
             `<td>${actionContent}</td>`,
-            `<td><strong>${rec.id}</strong></td>`,
+            `<td><strong>${shownId}</strong></td>`,
             `<td>${rec.namaSingkat}</td>`
         ];
 
         if (configSession.modReg) {
-            rowCells.push(`<td>${rec.nik || "-"}</td>`, `<td>${rec.jk}</td>`, `<td>${rec.ttl}</td>`, `<td>${rec.namaLengkap}</td>`, `<td>${rec.ortu}</td>`, `<td>${rec.hp}</td>`, `<td>${rec.pekerjaan}</td>`);
+            for (let key in recordLabel.regis) {
+                rowCells.push(`<td>${rec[key] || "-"}</td>`);
+            }
         }
         if (configSession.modAntro) {
+            for (let key in recordLabel.antro) {
+                rowCells.push(`<td>${rec[key] || "-"}</td>`);
+            }
             rowCells.push(
-                `<td>${rec.bb}</td>`, `<td>${rec.tb}</td>`, `<td>${rec.td}</td>`, `<td>${rec.hr}</td>`,
                 `<td>${rec.demam === "Ya" ? "Ya (" + rec.demamNote + ")" : "Tidak"}</td>`,
                 `<td>${rec.tenggorokan === "Ya" ? "Ya (" + rec.tenggorokanNote + ")" : "Tidak"}</td>`,
                 `<td>${rec.obat === "Ya" ? "Ya (" + rec.obatNote + ")" : "Tidak"}</td>`,
@@ -699,13 +750,15 @@ function triggerRectaPrint(id) {
     if (!printer) return; // Abaikan jika printer tidak di-setup
     const record = masterRecords.find(r => r.id === id);
     if (!record) return;
+    let shownId = modeID == "7 digit" ? record.id : record.id_5
 
     printer.align('center')
         .text('SCREENING JANTUNG')
-        .barcode('CODE128', record.id + "_" + record.namaSingkat)
+        .text('-----------------')
+        .barcode('CODE128', shownId + "_" + record.namaSingkat)
         .feed(1)
         .mode('A', true, true, true, false)
-        .text(record.id)
+        .text(shownId)
         .text("Nama: " + record.namaSingkat)
         .mode('A', false, false, false, false)
         .feed(1)

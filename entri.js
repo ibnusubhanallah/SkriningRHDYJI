@@ -44,8 +44,8 @@ const recordLabel = {
 
 // Sinkronisasi Data Awal dari LocalStorage
 document.addEventListener("DOMContentLoaded", () => {
-    const savedConfig = localStorage.getItem("skrining_config");
-    const savedRecords = localStorage.getItem("skrining_records");
+    const savedConfig = localStorage.getItem("entri_config");
+    const savedRecords = localStorage.getItem("entri_records");
 
     if (savedConfig) {
         configSession = JSON.parse(savedConfig);
@@ -126,12 +126,12 @@ function initSession() {
     if (modReg && (!meja || parseInt(meja) < 1)) return alert("Isi nomor Meja Registrasi!");
 
     configSession = { wilayah, kodeLokasi, modReg, modAntro, meja };
-    localStorage.setItem("skrining_config", JSON.stringify(configSession));
+    localStorage.setItem("entri_config", JSON.stringify(configSession));
     localStorage.setItem("RECTA_KEY", appkey);
     localStorage.setItem("RECTA_PORT", appport);
 
-    if (!localStorage.getItem("skrining_records")) {
-        localStorage.setItem("skrining_records", JSON.stringify([]));
+    if (!localStorage.getItem("entri_records")) {
+        localStorage.setItem("entri_records", JSON.stringify([]));
         masterRecords = [];
     }
 
@@ -375,7 +375,7 @@ function generateSequentialID() {
 function createAndReserveNewPatient() {
     if (configSession.modReg) {
         // 1. Ambil data segar dari localStorage dulu (Cek aktivitas tab sebelah)
-        const savedRecords = localStorage.getItem("skrining_records");
+        const savedRecords = localStorage.getItem("entri_records");
         masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
         // 2. Buat ID unik berdasarkan data paling update
@@ -391,7 +391,7 @@ function createAndReserveNewPatient() {
 
         // 4. Langsung kunci ke Storage utama
         masterRecords.unshift(newDraft);
-        localStorage.setItem("skrining_records", JSON.stringify(masterRecords));
+        localStorage.setItem("entri_records", JSON.stringify(masterRecords));
 
         // 5. Buka form dalam mode edit untuk ID draft tersebut
         isNewDraft = true;
@@ -403,7 +403,7 @@ function createAndReserveNewPatient() {
 
 function loadRecordToEdit(id = null) {
     // Ambil data paling fresh dari storage sebelum memuat ke form
-    const savedRecords = localStorage.getItem("skrining_records");
+    const savedRecords = localStorage.getItem("entri_records");
     masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
     let record = null;
@@ -473,7 +473,7 @@ function hideFormSection() {
     // Jika user menekan batal saat baru membuat data baru, hapus draft kosong dari storage
     if (isNewDraft && currentEditId) {
         masterRecords = masterRecords.filter(r => r.id !== currentEditId);
-        localStorage.setItem("skrining_records", JSON.stringify(masterRecords));
+        localStorage.setItem("entri_records", JSON.stringify(masterRecords));
     }
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
@@ -486,7 +486,7 @@ function handleFormSubmit(e) {
     e.preventDefault();
 
     // Pastikan kita mengambil data storage paling baru lagi untuk menghindari overwriting tab lain
-    const savedRecords = localStorage.getItem("skrining_records");
+    const savedRecords = localStorage.getItem("entri_records");
     masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
     const idValue = document.getElementById("fId").value;
@@ -540,7 +540,7 @@ function handleFormSubmit(e) {
         masterRecords.unshift(record);
     }
 
-    localStorage.setItem("skrining_records", JSON.stringify(masterRecords));
+    localStorage.setItem("entri_records", JSON.stringify(masterRecords));
     isNewDraft = false;
     currentEditId = null;
 
@@ -578,7 +578,7 @@ function buildTableHeaders() {
 }
 
 function renderTableRows() {
-    const savedRecords = localStorage.getItem("skrining_records");
+    const savedRecords = localStorage.getItem("entri_records");
     masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
     const tbody = document.getElementById("tableBody");
@@ -632,7 +632,7 @@ function renderTableRows() {
 }
 
 // --- FUNCTION UPLOAD (PLACEHOLDER INTEGRASI CLOUD) ---
-const GOOGLE_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxjwYJqjYx9_Z0x-2ssJPvadfGUL0Ze7hyOtBEkfwKaB4R6OmLCbwNfrpj57ByZ7_m2/exec";
+const GOOGLE_APPS_SCRIPT_URL = localStorage.getItem("GAS_URL");
 
 async function uploadDataToCloud() {
     // Ambil rekap data paling valid dan singkirkan draft kosong
@@ -671,7 +671,7 @@ async function uploadDataToCloud() {
             if (result.status === "success") {
                 alert("🎉 SELESAI! " + result.message);
                 // Aktifkan tombol reset jika data sudah dipastikan aman masuk cloud
-                alert("Silakan klik 'Akhiri Sesi' jika ingin menghapus memori lokal tablet untuk sesi baru.");
+                // alert("Silakan klik 'Akhiri Sesi' jika ingin menghapus memori lokal tablet untuk sesi baru.");
             } else {
                 alert("🚨 Gagal Upload: " + result.message);
             }
@@ -687,8 +687,8 @@ async function uploadDataToCloud() {
 
 function clearAllDataSession() {
     if (confirm("Reset sesi saat ini? Semua data rekap di perangkat ini akan dibersihkan.")) {
-        localStorage.removeItem("skrining_config");
-        localStorage.removeItem("skrining_records");
+        localStorage.removeItem("entri_config");
+        localStorage.removeItem("entri_records");
         location.reload();
     }
 }
@@ -739,8 +739,8 @@ function connectPrinter() {
 function actualResetSesi() {
     if (confirm("Reset sesi saat ini? Semua data rekap di perangkat ini akan dibersihkan secara permanen.")) {
         // Logika penghapusan localstorage
-        localStorage.removeItem("skrining_config");
-        localStorage.removeItem("skrining_records");
+        localStorage.removeItem("entri_config");
+        localStorage.removeItem("entri_records");
         location.reload();
     }
 }
@@ -770,32 +770,45 @@ function triggerRectaPrint(id) {
 }
 
 let idScannerInstance = new Html5Qrcode("idReader");
+let currentCameraId = null;
+let availableCameras = [];
+let isTorchOn = false;
 
-function openScannerIdModal() {
-    document.getElementById("modalScannerId").style.display = "flex";
-    const config = { fps: 20, qrbox: { width: 260, height: 120 }, aspectRatio: 1.0 };
+function toggleScannerIdModal() {
+    const text = document.getElementById("scannerControls");
+    if (text.style.display === "block") {
+        closeScannerIdModal();
+    } else {
+        text.style.display = "block";
+        const config = {
+            fps: 15,
+            // qrbox: { width: 260, height: 120 },
+            // aspectRatio: 1.0
+        };
 
-    idScannerInstance.start(
-        { facingMode: "environment" },
-        config,
-        (scannedText) => {
-            // Masukkan hasil scan langsung ke field ID Peserta
-            document.getElementById("fId").value = scannedText.split("_")[0].trim();
-            // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localstorage
-            // checkDuplicate(scannedText.trim());
-            closeScannerIdModal();
-        }
-    ).catch(err => console.error("Kamera ID Error: ", err));
+        idScannerInstance.start(
+            { facingMode: "environment" },
+            config,
+            (scannedText) => {
+                // Masukkan hasil scan langsung ke field ID Peserta
+                document.getElementById("fId").value = scannedText.split("_")[0].trim();
+                // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localstorage
+                // checkDuplicate(scannedText.trim());
+                closeScannerIdModal();
+            }
+        ).catch(err => console.error("Kamera ID Error: ", err));
+    }
 }
 
 function closeScannerIdModal() {
     if (idScannerInstance.isScanning) {
         idScannerInstance.stop().then(() => {
             // document.getElementById("idReader").innerHTML = "";
-            document.getElementById("modalScannerId").style.display = "none";
+            document.getElementById("scannerControls").style.display = "none";
             // idScannerInstance = null;
         });
     } else {
-        document.getElementById("modalScannerId").style.display = "none";
+        document.getElementById("scannerControls").style.display = "none";
+        // document.getElementById("modalScannerId").style.position = "absolute";
     }
 }

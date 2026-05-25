@@ -1,4 +1,4 @@
-const CACHE_NAME = 'screening-v3';
+const CACHE_NAME = 'RHD-YJI-v25-05-2026-1000';
 const ASSETS = [
     './',
     'img/draft flow skrining RHD - regist n antro.jpg',
@@ -17,8 +17,8 @@ const ASSETS = [
     './manifest.json',
     './print.html',
     './print.js',
-    './scanner.html',
-    './scanner.js',
+    './doctor.html',
+    './doctor.js',
     './sop.html',
     './sw.js',
 ];

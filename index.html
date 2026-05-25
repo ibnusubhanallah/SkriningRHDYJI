@@ -159,7 +159,7 @@
                     registrasi.</div>
             </a>
 
-            <a href="scanner.html" class="menu-card">
+            <a href="doctor.html" class="menu-card">
                 <div class="menu-icon">🩺</div>
                 <div class="menu-title">Screening & Redflag</div>
                 <div class="menu-desc">Modul dokter untuk pindai barcode struk pasien, anamnesis lanjutan, serta
@@ -180,9 +180,18 @@
                     lapangan untuk PIC kegiatan.</div>
             </a>
         </div>
-        <div id="cacheStatus"
-            style="margin-top: 30px; padding: 10px; border-radius: 8px; font-size: 13px; font-weight: bold; display: inline-block;">
-            ⏳ Memeriksa status penyimpanan offline...
+        <div style="margin-top: 30px; text-align: center;">
+            <div id="cacheStatus"
+                style="padding: 10px 15px; border-radius: 8px; font-size: 13px; font-weight: bold; display: inline-block; margin-bottom: 8px;">
+                ⏳ Memeriksa status penyimpanan offline...
+            </div>
+            <div id="lastUpdateInfo" style="font-size: 11px; color: #6c757d; margin-bottom: 10px;">
+                Versi Sistem: Memeriksa...
+            </div>
+            <button id="btnForceUpdate" onclick="forceUpdateApplication()"
+                style="display: none; background: #6c757d; color: white; border: none; padding: 6px 12px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold;">
+                🔄 Paksa Update Aplikasi (Butuh Sinyal)
+            </button>
         </div>
     </div>
 
@@ -192,50 +201,117 @@
     </div>
 
     <script>
-        // Registrasi Service Worker sekaligus cek status Cache Assets
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker.register('sw.js').then((registration) => {
                 const statusDiv = document.getElementById('cacheStatus');
+                const updateDiv = document.getElementById('lastUpdateInfo');
+                const btnUpdate = document.getElementById('btnForceUpdate');
 
-                // Fungsi untuk mengecek apakah file utama sudah aman di dalam Cache Storage
                 function checkCacheReady() {
                     if ('caches' in window) {
-                        caches.open('screening-v3').then(cache => {
-                            cache.match('index.html').then(match => {
-                                if (match) {
-                                    statusDiv.innerText = "🟢 Aplikasi Siap Digunakan Offline (Tercache)";
-                                    statusDiv.style.background = "#e2f0d9";
-                                    statusDiv.style.color = "#385723";
+                        caches.keys().then(keys => {
+                            // Mencari nama cache aktif (misal: RHD-YJI-v23-05-2026-1730)
+                            const activeCache = keys.find(k => k.startsWith('RHD-YJI'));
+
+                            if (activeCache) {
+                                statusDiv.innerText = "🟢 Aplikasi Siap Digunakan Offline (Tercache)";
+                                statusDiv.style.background = "#e2f0d9";
+                                statusDiv.style.color = "#385723";
+
+                                // Ekstraksi tanggal dan jam dari nama cache untuk ditampilkan ke UI
+                                // Mengubah 'v23-05-2026-1730' menjadi '23-05-2026 Jam 17:30'
+                                const rawVer = activeCache.replace('RHD-YJI-v', '').split('-');
+                                if (rawVer.length === 4) {
+                                    const tgl = rawVer[0];
+                                    const bln = rawVer[1];
+                                    const thn = rawVer[2];
+                                    const jam = rawVer[3].substring(0, 2) + ':' + rawVer[3].substring(2, 4);
+                                    updateDiv.innerText = `Terakhir Diperbarui: ${tgl}/${bln}/${thn} - Jam ${jam} WIB`;
                                 } else {
-                                    statusDiv.innerText = "⚠️ Belum Siap Offline: Sedang mengunduh aset...";
-                                    statusDiv.style.background = "#fff2cc";
-                                    statusDiv.style.color = "#7f6000";
+                                    updateDiv.innerText = `Versi: ${activeCache}`;
                                 }
-                            });
+
+                                // Tampilkan tombol paksa update hanya jika perangkat sedang online
+                                btnUpdate.style.display = navigator.onLine ? "inline-block" : "none";
+                            } else {
+                                statusDiv.innerText = "⚠️ Belum Siap Offline: Sedang mengunduh aset...";
+                                statusDiv.style.background = "#fff2cc";
+                                statusDiv.style.color = "#7f6000";
+                                updateDiv.innerText = "Versi Sistem: Mendownload...";
+                                btnUpdate.style.display = "none";
+                            }
                         });
                     }
                 }
 
-                // Jalankan cek saat pertama load
+                // Jalankan cek saat pertama kali halaman dimuat
                 checkCacheReady();
 
-                // Jika ada update service worker selesai diinstal di latar belakang, cek ulang
+                // Jika ada service worker baru selesai terinstal di latar belakang
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     newWorker.addEventListener('statechange', () => {
                         if (newWorker.state === 'installed') {
-                            setTimeout(checkCacheReady, 1000); // Beri jeda 1 detik lalu update status
+                            statusDiv.innerText = "🔄 Update Selesai Diunduh! Memasang...";
+                            setTimeout(() => {
+                                location.reload(); // Otomatis refresh halaman untuk menerapkan update baru
+                            }, 1000);
                         }
                     });
                 });
-            }).catch(err => {
-                console.error("Service Worker Gagal:", err);
             });
         } else {
-            document.getElementById('cacheStatus').innerText = "❌ Browser tidak mendukung mode offline (PWA).";
+            document.getElementById('cacheStatus').innerText = "❌ Browser tidak mendukung PWA Offline.";
             document.getElementById('cacheStatus').style.background = "#fce4d6";
             document.getElementById('cacheStatus').style.color = "#c65911";
         }
+
+        // FUNGSI FORCED UPDATE (MENGHAPUS CACHE SECARA PAKSA & INSTAN)
+        function forceUpdateApplication() {
+            if (!navigator.onLine) {
+                alert("⚠️ Perangkat sedang offline! Cari sinyal internet terlebih dahulu untuk melakukan update.");
+                return;
+            }
+
+            if (confirm("Apakah Anda ingin memaksa sistem mengunduh pembaruan kode terbaru dari GitHub?\n(Halaman akan otomatis dimuat ulang setelah selesai)")) {
+                const btn = document.getElementById('btnForceUpdate');
+                btn.disabled = true;
+                btn.innerText = "⏳ Menghapus Cache Lama...";
+
+                if ('caches' in window) {
+                    // Hapus semua storage cache bunderan aplikasi
+                    caches.keys().then(names => {
+                        return Promise.all(names.map(name => caches.delete(name)));
+                    }).then(() => {
+                        // Unregister service worker agar bersih total
+                        navigator.serviceWorker.getRegistrations().then(registrations => {
+                            for (let registration of registrations) {
+                                registration.unregister();
+                            }
+                            btn.innerText = "⏳ Mengunduh Kode Baru...";
+                            // Paksa browser bypass cache internet dan reload dari server GitHub murni
+                            setTimeout(() => {
+                                location.reload(true);
+                            }, 1000);
+                        });
+                    });
+                }
+            }
+        }
+
+        // Pantau status sinyal untuk memunculkan/menyembunyikan tombol paksa update secara real-time
+        window.addEventListener('online', () => {
+            if (document.getElementById('btnForceUpdate').parentNode) {
+                document.getElementById('btnForceUpdate').style.display = "inline-block";
+            }
+        });
+        window.addEventListener('offline', () => {
+            if (document.getElementById('btnForceUpdate').parentNode) {
+                document.getElementById('btnForceUpdate').style.display = "none";
+            }
+        });
+
+        localStorage.setItem('GAS_URL', 'https://script.google.com/macros/s/AKfycbxjwYJqjYx9_Z0x-2ssJPvadfGUL0Ze7hyOtBEkfwKaB4R6OmLCbwNfrpj57ByZ7_m2/exec');
     </script>
 
 </body>

@@ -1,4 +1,4 @@
-const GAS_URL = "https://script.google.com/macros/s/AKfycbxjwYJqjYx9_Z0x-2ssJPvadfGUL0Ze7hyOtBEkfwKaB4R6OmLCbwNfrpj57ByZ7_m2/exec";
+const GAS_URL = localStorage.getItem("GAS_URL");
 let html5QrCode = new Html5Qrcode("reader");
 let currentScanned = []; // Array untuk menyimpan hasil scan sementara (NIK dan Nama)
 let isEditing = false; // Flag untuk menandai apakah sedang dalam mode edit atau input baru
@@ -46,7 +46,7 @@ function getFormattedDate() {
 
 function checkDuplicate(data) {
     const [id, name] = data;
-    let history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+    let history = JSON.parse(localStorage.getItem('doctor_records') || "[]");
     const existing = history.find(item => item.id === id);
 
     if (existing) {
@@ -81,7 +81,7 @@ function saveToLocal() {
     const timestamp = getFormattedDate(); // Ambil waktu dalam format yang sudah ditentukan
 
     // 1. Ambil data lama dari LocalStorage
-    let history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+    let history = JSON.parse(localStorage.getItem('doctor_records') || "[]");
 
     // 2. Tambah data baru
     if (isEditMode) {
@@ -100,7 +100,7 @@ function saveToLocal() {
     }
 
     // 3. Simpan kembali ke LocalStorage
-    localStorage.setItem('screening_history', JSON.stringify(history));
+    localStorage.setItem('doctor_records', JSON.stringify(history));
 
     // 4. Update Tampilan & Reset
     renderTable();
@@ -111,7 +111,7 @@ function saveToLocal() {
 }
 
 function renderTable() {
-    const history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+    const history = JSON.parse(localStorage.getItem('doctor_records') || "[]");
     const tbody = document.getElementById('recapBody');
     tbody.innerHTML = "";
 
@@ -133,13 +133,13 @@ function renderTable() {
 
 function editManual(id) {
     currentId = id;
-    const history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+    const history = JSON.parse(localStorage.getItem('doctor_records') || "[]");
     openEntryModal(history.find(i => i.id === id), true);
 }
 
 // // FUNGSI COPY UNTUK GOOGLE SHEETS
 // function copyToClipboard() {
-//     const history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+//     const history = JSON.parse(localStorage.getItem('doctor_records') || "[]");
 //     if (history.length === 0) return alert("Belum ada data untuk dicopy.");
 
 //     // Buat format Tab-Separated Values (TSV) agar pas masuk ke kolom GSheet
@@ -163,7 +163,7 @@ function openUploadForm() {
 async function performUpload() {
     const doctor = document.getElementById('doctorName').value;
     const code = document.getElementById('accessCode').value;
-    const history = JSON.parse(localStorage.getItem('screening_history') || "[]");
+    const history = JSON.parse(localStorage.getItem('doctor_records') || "[]");
 
     if (!doctor || !code) return alert("Nama Dokter dan Kode Akses wajib diisi!");
 
@@ -199,7 +199,7 @@ async function performUpload() {
 
 function clearData() {
     if (confirm("Data lokal akan dihapus permanen. Lanjut?")) {
-        localStorage.removeItem('screening_history');
+        localStorage.removeItem('doctor_records');
         renderTable();
         closeModal('modalVerify');
         alert("Data dibersihkan. Siap untuk sesi berikutnya.");

@@ -122,7 +122,8 @@
 <body>
 
     <div class="container">
-        <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}" class="btn-back">⬅️ Kembali ke Menu Utama</a>
+        <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}"
+            class="btn-back">⬅️ Kembali ke Menu Utama</a>
 
         <h3>Google Drive Subfolder Extractor</h3>
         <p style="font-size: 13px; color: #666; margin-top: -10px;">Gunakan tools ini untuk mengambil semua nama dan
@@ -147,17 +148,14 @@
     </div>
 
     <script>
+        let gasUrl;
+
         // Ambil GAS URL secara otomatis dari localStorage jika ada
         document.addEventListener("DOMContentLoaded", () => {
-            const savedUrl = localStorage.getItem('GAS_URL');
-            if (savedUrl) {
-                document.getElementById('gasUrl').value = savedUrl;
-            }
+            gasUrl = localStorage.getItem('GAS_URL');
         });
 
         async function startExtraction() {
-            // const gasUrl = document.getElementById('gasUrl').value.trim();
-            const gasUrl = savedUrl;
             const folderUrl = document.getElementById('folderUrl').value.trim();
 
             if (!gasUrl || !folderUrl) {

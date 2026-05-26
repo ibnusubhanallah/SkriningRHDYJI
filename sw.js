@@ -1,4 +1,4 @@
-const CACHE_NAME = 'RHD-YJI-v26-05-2026-1830';
+const CACHE_NAME = 'RHD-YJI-v26-05-2026-1840';
 const ASSETS = [
     './',
     'img/draft flow skrining RHD - regist n antro.jpg',
@@ -15,8 +15,6 @@ const ASSETS = [
     './extractor.html',
     './index.html',
     './manifest.json',
-    './print.html',
-    './print.js',
     './doctor.html',
     './doctor.js',
     './sop.html',
@@ -25,12 +23,33 @@ const ASSETS = [
 
 self.addEventListener('install', e => {
     e.waitUntil(
-        caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+        caches.open(CACHE_NAME).then(async (cache) => {
+            console.log('⏳ Memulai proses caching mandiri...');
 
-    // Paksa Service Worker baru untuk langsung mengonfirmasi instalasi 
-    // tanpa menunggu versi lama mati
+            // Kita paksa download satu per satu agar ketahuan file mana yang mogok
+            for (const asset of ASSETS) {
+                try {
+                    await cache.add(asset);
+                    console.log(`✅ Berhasil mengunci ke memori: ${asset}`);
+                } catch (err) {
+                    // JIKA FILE ERROR/GAGAL DOWNLOAD, DIA AKAN BERTERIAK DI CONSOLE DI SINI:
+                    console.error(`🚨 DALANGNYA KETEMU! File ini gagal di-cache atau jalurnya salah: ${asset}`, err);
+                }
+            }
+            console.log('🏁 Proses evaluasi caching selesai.');
+        })
+    );
     self.skipWaiting();
 });
+
+// self.addEventListener('install', e => {
+//     e.waitUntil(
+//         caches.open(CACHE_NAME).then(cache => cache.addAll(ASSETS)));
+
+//     // Paksa Service Worker baru untuk langsung mengonfirmasi instalasi 
+//     // tanpa menunggu versi lama mati
+//     self.skipWaiting();
+// });
 
 self.addEventListener('activate', e => {
     e.waitUntil(

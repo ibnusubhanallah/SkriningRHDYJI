@@ -2,9 +2,9 @@
 
 { key: "cut", value: function () { var e = arguments.length > 0 && void 0 !== arguments[0] && arguments[0], t = arguments.length > 1 && void 0 !== arguments[1] ? arguments[1] : 4; return this.buffer.write([29, 86]), this.buffer.writeUInt8(e), this.feed(t), this } },
 
-{ key: "barcode", value: function (e, t, r) { var n = u.indexOf(e.toUpperCase()); if (n < 0) throw new Error("Not support barcode '" + e + "'"); return r && this.barcodeHeight(r), 
+{ key: "barcode", value: function (e, t, r, y) { var n = u.indexOf(e.toUpperCase()); if (n < 0) throw new Error("Not support barcode '" + e + "'"); return r && this.barcodeHeight(r), 
 
-this.buffer.write([29, 119]), this.buffer.writeUInt8(2),
+this.buffer.write([29, 119]), this.buffer.writeUInt8(y),
 
 this.buffer.write([29, 107]), this.buffer.writeUInt8(65 + n), this.buffer.writeUInt8(t.length), this.buffer.write(t), this } },
 

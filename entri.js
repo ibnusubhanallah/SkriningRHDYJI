@@ -96,6 +96,8 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     document.getElementById("maxNameLength").innerText = modeID === "7 digit" ? "6" : "8"; // Update teks batas maksimal karakter nama singkat sesuai dengan atribut maxlength
+    document.getElementById("fId").setAttribute("minlength", modeID === "7 digit" ? "7" : "5");
+    document.getElementById("fId").setAttribute("maxlength", modeID === "7 digit" ? "7" : "5");
     document.getElementById("fNamaSingkat").setAttribute("maxlength", modeID === "7 digit" ? "6" : "8");
 });
 
@@ -401,6 +403,8 @@ function createAndReserveNewPatient() {
     }
 }
 
+
+
 function loadRecordToEdit(id = null) {
     // Ambil data paling fresh dari storage sebelum memuat ke form
     const savedRecords = localStorage.getItem("entri_records");
@@ -410,19 +414,23 @@ function loadRecordToEdit(id = null) {
     let shownId = null;
     if (id) {
         record = masterRecords.find(r => r.id === id);
-        if (!record) return;
-
-        currentEditId = id;
-        shownId = modeID == "7 digit" ? record.id : record.id_5;
-        document.getElementById("formTitle").innerText = record.isDraft ? "Form Pasien Baru (ID: " + shownId + ")" : "Edit Data Pasien (ID: " + shownId + ")";
-        document.getElementById("formSection").style.display = "block";
-
-        document.getElementById("fId").value = shownId;
-        document.getElementById("fNamaSingkat").focus();
-    } else {
         if (!record) {
-            document.getElementById("fId").disabled = false;
+            if (configSession.modReg) return;
+            document.getElementById("formTitle").innerText = "Form Antropometri Pasien";
+            document.getElementById("formSection").style.display = "block";
+        } else if (configSession.modReg) {
+            currentEditId = id;
+            shownId = modeID == "7 digit" ? record.id : record.id_5;
+            document.getElementById("formTitle").innerText = record.isDraft ? "Form Pasien Baru (ID: " + shownId + ")" : "Edit Data Pasien (ID: " + shownId + ")";
+            document.getElementById("formSection").style.display = "block";
+
+            document.getElementById("fId").value = shownId;
+            document.getElementById("fNamaSingkat").focus();
         }
+    } else {
+        // if (!record) { //??
+        document.getElementById("fId").disabled = false;
+        // }
         document.getElementById("formTitle").innerText = "Form Antropometri Pasien";
         document.getElementById("formSection").style.display = "block";
         document.getElementById("fId").focus();
@@ -533,7 +541,7 @@ function handleFormSubmit(e) {
 
     }
 
-    const index = masterRecords.findIndex(r => r.id === (modeID == "7 digit" ? idValue : decodeId5digit(idValue)));
+    const index = masterRecords.findIndex(r => r.id === (modeID == "7 digit" ? idValue : decodeId5digit(idValue))); // ini bener karena fungsi decode itu untuk mengubah id 5 digit di input jadi 7 digit di records
     if (index !== -1) {
         masterRecords[index] = record; // Ganti draft/data eksis dengan data final
     } else {
@@ -546,11 +554,23 @@ function handleFormSubmit(e) {
 
     document.getElementById("formSection").style.display = "none";
     renderTableRows();
+    kosongkanFormInput();
 
     if (configSession.modReg && printer) {
         triggerRectaPrint((modeID == "7 digit" ? idValue : decodeId5digit(idValue)));
     }
     // alert("✅ Data berhasil disimpan di LocalStorage perangkat!");
+}
+
+function kosongkanFormInput() {
+    document.getElementById("fId").value = "";
+    document.getElementById("fNamaSingkat").value = "";
+    for (const [key, [label, fieldId]] of Object.entries(recordLabel.regis)) {
+        document.getElementById(fieldId).value = "";
+    }
+    for (const [key, [label, fieldId]] of Object.entries(recordLabel.antro)) {
+        document.getElementById(fieldId).value = "";
+    }
 }
 
 // --- TABEL DYNAMIC DISPLAY ---
@@ -619,10 +639,10 @@ function renderTableRows() {
                 rowCells.push(`<td>${rec[key] || "-"}</td>`);
             }
             rowCells.push(
-                `<td>${rec.demam === "Ya" ? "Ya (" + rec.demamNote + ")" : "Tidak"}</td>`,
-                `<td>${rec.tenggorokan === "Ya" ? "Ya (" + rec.tenggorokanNote + ")" : "Tidak"}</td>`,
-                `<td>${rec.obat === "Ya" ? "Ya (" + rec.obatNote + ")" : "Tidak"}</td>`,
-                `<td>${rec.rs === "Ya" ? "Ya (" + rec.rsNote + ")" : "Tidak"}</td>`
+                `<td>${rec.demam === "Ya" ? "Ya (" + rec.demamNote + ")" : rec.demam || "-"}</td>`,
+                `<td>${rec.tenggorokan === "Ya" ? "Ya (" + rec.tenggorokanNote + ")" : rec.tenggorokan || "-"}</td>`,
+                `<td>${rec.obat === "Ya" ? "Ya (" + rec.obatNote + ")" : rec.obat || "-"}</td>`,
+                `<td>${rec.rs === "Ya" ? "Ya (" + rec.rsNote + ")" : rec.rs || "-"}</td>`
             );
         }
 
@@ -654,7 +674,6 @@ async function uploadDataToCloud() {
             // Tembak data ke Google Apps Script menggunakan metode POST JSON
             const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
                 method: "POST",
-                // mode: "no-cors", // Optional: use if you don't need to read the response body
                 headers: {
                     "Content-Type": "text/plain;charset=utf-8" // Avoids CORS preflight
                 },
@@ -669,9 +688,19 @@ async function uploadDataToCloud() {
             const result = await response.json();
 
             if (result.status === "success") {
-                alert("🎉 SELESAI! " + result.message);
-                // Aktifkan tombol reset jika data sudah dipastikan aman masuk cloud
-                // alert("Silakan klik 'Akhiri Sesi' jika ingin menghapus memori lokal tablet untuk sesi baru.");
+                // --- ALUR MODAL BERTINGKAT BERMAIN DI SINI ---
+                // 1. Sembunyikan Modal Awal (Upload)
+                document.getElementById("modalAkhiriSesi").style.display = "none";
+
+                // 2. Isi pesan verifikasi dengan info baris ter-append
+                document.getElementById("txtVerifikasiStatus").innerHTML = `<strong>Sistem Berhasil!</strong> ${validRecords.length} data pasien telah sukses ditambahkan di Google Sheets.`;
+
+                // 3. Inject URL Lembar Sheets dengan parameter baris agar langsung menyorot area data baru
+                // Menambahkan komponen &range=A[startRow] agar saat diklik, browser langsung meng-highlight baris data barunya
+                document.getElementById("linkVerifikasiSheets").href = result.spreadsheetUrl;
+
+                // 4. Buka Modal Verifikasi
+                document.getElementById("modalVerifikasiCloud").style.display = "flex";
             } else {
                 alert("🚨 Gagal Upload: " + result.message);
             }
@@ -683,14 +712,24 @@ async function uploadDataToCloud() {
             btnUpload.innerText = originalText;
         }
     }
+
+    document.getElementById("fAccessCodeCloud").value = ""; // Kosongkan input setelah proses upload
 }
 
-function clearAllDataSession() {
-    if (confirm("Reset sesi saat ini? Semua data rekap di perangkat ini akan dibersihkan.")) {
+// FUNGSI OPSI 1: JIKA DATA SUDAH DICEK DAN AMAN
+function executeResetLokalSempurna() {
+    if (confirm("Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.")) {
         localStorage.removeItem("entri_config");
         localStorage.removeItem("entri_records");
         location.reload();
     }
+}
+
+// FUNGSI OPSI 2: JIKA INGIN KEMBALI KARENA INGIN UPLOAD ULANG
+function rollbackToUploadMenu() {
+    // Tutup modal verifikasi, balikkan ke modal input kode akses awal
+    document.getElementById("modalVerifikasiCloud").style.display = "none";
+    document.getElementById("modalAkhiriSesi").style.display = "flex";
 }
 
 // --- LOGIKA MODAL CONTROL & INTEGRASI RECTA ---
@@ -736,15 +775,6 @@ function connectPrinter() {
     });
 }
 
-function actualResetSesi() {
-    if (confirm("Reset sesi saat ini? Semua data rekap di perangkat ini akan dibersihkan secara permanen.")) {
-        // Logika penghapusan localstorage
-        localStorage.removeItem("entri_config");
-        localStorage.removeItem("entri_records");
-        location.reload();
-    }
-}
-
 // Fungsi Trigger Cetak Struk via Recta Host
 function triggerRectaPrint(id) {
     if (!printer) return; // Abaikan jika printer tidak di-setup
@@ -753,62 +783,90 @@ function triggerRectaPrint(id) {
     let shownId = modeID == "7 digit" ? record.id : record.id_5
 
     printer.align('center')
-        .text('SCREENING JANTUNG')
+        .text('SCREENING RHD YJI 2026')
         .text('-----------------')
-        .barcode('CODE128', shownId + "_" + record.namaSingkat)
+        .qrcode(6, shownId + "_" + record.namaSingkat)
         .feed(1)
         .mode('A', true, true, true, false)
         .text(shownId)
-        .text("Nama: " + record.namaSingkat)
+        .text(record.namaSingkat)
         .mode('A', false, false, false, false)
         .feed(1)
         .align('left')
+        .text("Nama: " + record.namaLengkap)
         .text("JK: " + record.jk)
         .text("T. Lahir: " + record.ttl)
         .feed(4)
         .print();
 }
 
-let idScannerInstance = new Html5Qrcode("idReader");
-let currentCameraId = null;
-let availableCameras = [];
 let isTorchOn = false;
+let idScannerInstance = null;
 
-function toggleScannerIdModal() {
-    const text = document.getElementById("scannerControls");
-    if (text.style.display === "block") {
-        closeScannerIdModal();
-    } else {
-        text.style.display = "block";
-        const config = {
-            fps: 15,
-            // qrbox: { width: 260, height: 120 },
-            // aspectRatio: 1.0
-        };
+function openScannerIdModal() {
+    document.getElementById("modalScannerId").style.display = "flex";
+    isTorchOn = false;
+    document.getElementById("btnToggleTorch").innerText = "💡 Nyalakan Senter";
+    idScannerInstance = new Html5Qrcode("idReader");
+    const config = { fps: 20, qrbox: { width: 260, height: 120 }, aspectRatio: 1.0 };
 
-        idScannerInstance.start(
-            { facingMode: "environment" },
-            config,
-            (scannedText) => {
-                // Masukkan hasil scan langsung ke field ID Peserta
-                document.getElementById("fId").value = scannedText.split("_")[0].trim();
-                // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localstorage
-                // checkDuplicate(scannedText.trim());
-                closeScannerIdModal();
-            }
-        ).catch(err => console.error("Kamera ID Error: ", err));
-    }
+    idScannerInstance.start(
+        { facingMode: "environment" },
+        config,
+        (scannedText) => {
+            turnOffTorchIfActive();
+            // Masukkan hasil scan langsung ke field ID Peserta
+            const id = scannedText.split("_")[0]; // Asumsi format QR: ID5digit_NamaSingkat
+            document.getElementById("fId").value = id;
+            document.getElementById("fId").disabled = true;
+            document.getElementById("fNamaSingkat").value = scannedText.split("_")[1] || ""; // Ambil nama singkat dari QR jika ada
+            document.getElementById("fNamaSingkat").disabled = true;
+            // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localstorage
+            loadRecordToEdit(id);
+            closeScannerIdModal();
+        }
+    ).catch(err => console.error("Kamera ID Error: ", err));
 }
 
 function closeScannerIdModal() {
-    if (idScannerInstance.isScanning) {
+    if (idScannerInstance && idScannerInstance.isScanning) {
         idScannerInstance.stop().then(() => {
-            // document.getElementById("idReader").innerHTML = "";
-            document.getElementById("scannerControls").style.display = "none";
-            // idScannerInstance = null;
+            document.getElementById("idReader").innerHTML = "";
+            document.getElementById("modalScannerId").style.display = "none";
+            idScannerInstance = null;
         });
     } else {
-        document.getElementById("scannerControls").style.display = "none";
-        // document.getElementById("modalScannerId").style.position = "absolute";
+        document.getElementById("modalScannerId").style.display = "none";
+    }
+}
+
+function toggleScannerTorch() {
+    if (!idScannerInstance || !idScannerInstance.isScanning) return;
+
+    isTorchOn = !isTorchOn;
+    const btnTorch = document.getElementById("btnToggleTorch");
+
+    idScannerInstance.applyVideoConstraints({
+        advanced: [{ torch: isTorchOn }]
+    }).then(() => {
+        if (isTorchOn) {
+            btnTorch.innerText = "🔇 Matikan Senter";
+            btnTorch.style.background = "#212529";
+            btnTorch.style.color = "#fff";
+        } else {
+            btnTorch.innerText = "💡 Nyalakan Senter";
+            btnTorch.style.background = "#ffc107";
+            btnTorch.style.color = "#212529";
+        }
+    }).catch(err => {
+        console.error("Gagal mengontrol senter:", err);
+        isTorchOn = !isTorchOn; // Revert state jika gagal
+    });
+}
+
+function turnOffTorchIfActive() {
+    if (isTorchOn && idScannerInstance) {
+        idScannerInstance.applyVideoConstraints({ advanced: [{ torch: false }] }).catch(() => { });
+        isTorchOn = false;
     }
 }

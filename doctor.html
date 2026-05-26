@@ -4,144 +4,226 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scanner Redflag Dokter</title>
+    <title>Pencatatan Redflag dan Hasil Echocardiography</title>
     <script src="library/html5-qrcode.min.js"></script>
     <style>
         :root {
             --primary: #0056b3;
-            --danger: #dc3545;
             --success: #28a745;
+            --bg: #f4f7f6;
+            --border: #ccd1d9;
         }
 
         body {
-            font-family: 'Segoe UI', sans-serif;
-            background: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg);
             margin: 0;
             padding: 20px;
+            color: #333;
         }
 
         .container {
-            max-width: 600px;
+            max-width: 1000px;
             margin: auto;
         }
 
-        /* Scanner Box */
-        #reader {
-            width: 100%;
-            border-radius: 12px;
-            overflow: hidden;
-            border: 2px solid #ddd;
-            background: #000;
-        }
-
-        /* Modal Tanya Redflag */
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-
-        .modal {
+        .card {
             background: white;
-            padding: 20px;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        /* Rekap List */
-        .recap-section {
-            margin-top: 30px;
-            background: white;
-            padding: 15px;
+            padding: 25px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 14px;
+        h2,
+        h3 {
+            margin-top: 0;
+            color: #111;
         }
 
-        th,
-        td {
-            border-bottom: 1px solid #eee;
-            padding: 10px;
-            text-align: left;
+        .form-group {
+            margin-bottom: 15px;
         }
 
-        th {
-            background: #f4f4f4;
-        }
-
-        .redflag-label {
-            color: white;
-            background: var(--danger);
-            padding: 2px 6px;
-            border-radius: 4px;
+        label {
+            display: block;
             font-weight: bold;
-            font-size: 10px;
+            font-size: 14px;
+            margin-bottom: 5px;
         }
 
-        /* Buttons */
+        input[type="text"],
+        input[type="number"],
+        select,
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 15px;
+        }
+
+        input:focus,
+        select:focus,
+        textarea:focus {
+            outline: 2px solid var(--primary);
+            background: #fbfdff;
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 15px;
+            margin: 10px 0;
+        }
+
+        .checkbox-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            cursor: pointer;
+        }
+
+        /* Button Style */
         .btn {
-            padding: 12px;
+            padding: 12px 20px;
             border: none;
             border-radius: 6px;
-            cursor: pointer;
             font-weight: bold;
-            font-size: 14px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
         }
 
         .btn-success {
             background: var(--success);
             color: white;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .btn-upload {
-            background: var(--primary);
-            color: white;
         }
 
         .btn-danger {
-            background: var(--danger);
+            background: #dc3545;
             color: white;
         }
 
-        .btn-clear {
-            background: #6c757d;
+        .btn-cloud {
+            background: #17a2b8;
             color: white;
+        }
+
+        /* Form Entri Dinamis */
+        #formSection {
+            display: none;
+            background: #f9fafb;
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .field-note {
             font-size: 12px;
+            color: #656d78;
+            margin-top: 2px;
+            font-style: italic;
         }
 
-        .flex-between {
+        /* Tabel Rekap dengan Frozen Column */
+        .table-wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: white;
+            margin-top: 15px;
+        }
+
+        table {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        th,
+        td {
+            padding: 10px 12px;
+            border-bottom: 1px solid #e6e9ed;
+            border-right: 1px solid #e6e9ed;
+            background: white;
+            white-space: nowrap;
+        }
+
+        th {
+            background: #f5f7fa;
+            font-weight: bold;
+            text-align: left;
+            position: sticky;
+            top: 0;
+            z-index: 2;
+        }
+
+        /* Pembekuan Berurutan ke Kanan: Kolom 1 (Aksi), Kolom 2 (ID), Kolom 3 (Nama Singkat) */
+        th:nth-child(1),
+        td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 3;
+            background: #f5f7fa;
+            min-width: 65px;
+            max-width: 65px;
+            width: 65px;
+            border-right: 1px solid #ccd1d9;
+            text-align: center;
+        }
+
+        /* th:nth-child(2),
+        td:nth-child(2) {
+            position: sticky;
+            left: 90px;
+            z-index: 3;
+            background: #f5f7fa;
+            min-width: 75px;
+            max-width: 75px;
+            width: 75px;
+            border-right: 1px solid #ccd1d9;
+        }
+
+        th:nth-child(3),
+        td:nth-child(3) {
+            position: sticky;
+            left: 190px;
+            z-index: 3;
+            background: #f5f7fa;
+            min-width: 95px;
+            max-width: 95px;
+            width: 95px;
+            border-right: 2px solid #ccd1d9;
+        } */
+
+        td:nth-child(1),
+        td:nth-child(2),
+        td:nth-child(3) {
+            background: #fff !important;
+        }
+
+        tr:hover td {
+            background: #f1f5f9 !important;
+        }
+
+        .table-header-flex {
             display: flex;
             justify-content: space-between;
             align-items: center;
-        }
-
-        input,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-            box-sizing: border-box;
         }
 
         .btn-back {
@@ -160,88 +242,196 @@
 </head>
 
 <body>
+    <div class="container" style="justify-content: center;">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h3 style="margin-bottom: 0;">Menu Dokter: Pencatatan Redflag dan Hasil Echo</h3>
+                <button class="btn btn-danger" style="margin-left: 10px;" onclick="openAkhiriSesiModal()">❌
+                    Akhiri Sesi</button>
+            </div>
+        </div>
 
-    <div class="container">
-        <a href="javascript:if(history.length>1){history.back()}else{window.location.href='index.html'}"
-            class="btn-back">⬅️ Kembali ke Menu Utama</a>
+        <div id="formSection" class="card">
+            <h3 id="formTitle">Form Input Skrining</h3>
+            <form id="entryForm" onsubmit="handleFormSubmit(event)">
+                <div class="grid-2">
+                    <div class="form-group" style="max-width: 320px;">
+                        <label for="fId">ID Peserta: *</label>
+                        <div style="display: flex; gap: 8px;">
+                            <input type="text" id="fId" required maxlength="7" minlength="7" disabled>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="fNamaSingkat">Nama Singkat (Maks <span id="maxNameLength">6</span>
+                            Huruf) *</label>
+                        <input type="text" id="fNamaSingkat" maxlength="6">
+                    </div>
+                </div>
+                <div style="display: flex; justify-content: center;">
+                    <label style="color:#dc3545; font-weight:bold; display:block; margin:10px 0; font-size: larger;">
+                        <input type="checkbox" id="fRedflag"> PASIEN REDFLAG?
+                    </label>
+                </div>
+                <textarea id="fKeterangan" style="margin-top: 10px;" placeholder="Keterangan klinis..."></textarea>
+                <div
+                    style="margin-top: 15px; border: 1px solid #dee2e6; border-radius: 8px; background: #fff; overflow: hidden; text-align: left;">
+                    <div
+                        style="background: #f1f3f5; padding: 10px 15px; font-weight: bold; font-size: 14px; color: #495057; border-bottom: 1px solid #dee2e6;">
+                        📊 Temuan Klinis Katup (Echocardiography)
+                    </div>
 
-        <h3 style="text-align: center;">Menu Dokter: Scan Pasien</h3>
+                    <div style="padding: 15px; display: flex; flex-direction: column; gap: 15px;">
 
-        <div id="reader"></div>
-        <p style="text-align: center; color: #666; font-size: 12px;">Arahkan kamera ke barcode pada struk pasien</p>
+                        <div>
+                            <strong style="color: #c82333; font-size: 13px;">KATUP MITRAL</strong>
+                            <div
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; font-size: 13px;">
+                                <label><input type="checkbox" id="vMitralRestricted"> Gerakan Restricted</label>
+                                <label><input type="checkbox" id="vMitralProlapse"> Prolapse</label>
+                                <label><input type="checkbox" id="vMitralStenosis"> Stenosis</label>
+                                <label><input type="checkbox" id="vMitralRegurgitasi"> Regurgitasi (Signifikan)</label>
+                            </div>
+                            <div
+                                style="margin-top: 6px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
+                                <span>Panjang Jet:</span>
+                                <input type="number" id="vMitralJet" placeholder="... mm"
+                                    style="width: 70px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;">
+                                <label style="margin-left:10px;"><input type="checkbox" id="vMitralPansistolic">
+                                    Pansistolic MR</label>
+                            </div>
+                        </div>
 
-        <div class="recap-section">
-            <div class="flex-between">
-                <strong>List Hasil Screening</strong>
-                <div>
+                        <hr style="border: 0; border-top: 1px dashed #dee2e6; margin: 0;">
+
+                        <div>
+                            <strong style="color: #c82333; font-size: 13px;">KATUP AORTA</strong>
+                            <div
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; font-size: 13px;">
+                                <label><input type="checkbox" id="vAortaRestricted"> Gerakan Restricted</label>
+                                <label><input type="checkbox" id="vAortaProlapse"> Prolapse</label>
+                                <label><input type="checkbox" id="vAortaStenosis"> Stenosis</label>
+                                <label><input type="checkbox" id="vAortaRegurgitasi"> Regurgitasi (Signifikan)</label>
+                            </div>
+                        </div>
+
+                        <hr style="border: 0; border-top: 1px dashed #dee2e6; margin: 0;">
+
+                        <div>
+                            <strong style="color: #495057; font-size: 13px;">TRIKUSPID & PULMONAL</strong>
+                            <div
+                                style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; font-size: 13px;">
+                                <label><input type="checkbox" id="vTrikuspidRegurgitasi"> Regurgitasi Trikuspid</label>
+                                <label><input type="checkbox" id="vPulmonalRegurgitasi"> Regurgitasi Pulmonal</label>
+                                <label><input type="checkbox" id="vTrikuspidStenosis"> Stenosis Trikuspid</label>
+                                <label><input type="checkbox" id="vPulmonalStenosis"> Stenosis Pulmonal</label>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-success">Simpan Data</button>
+                    <button type="button" id="cancelBtn" class="btn" onclick="hideFormSection()">Batal</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="table-header-flex">
+                <h3 style="margin:0;">Daftar Hasil Entri Pasien</h3>
+                <div style="display: flex;">
                     <button type="button" id="btnScanIdPasien" onclick="openScannerIdModal()"
-                        style="display: none; background: #6c757d; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 23px; margin-right: 10px;">📷</button>
+                        style="display: flex; background: #6c757d; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 23px; margin-right: 10px;">📷</button>
+                    <button class="btn btn-primary" id="btnOpenForm" onclick="loadRecordToEdit()">+</button>
                 </div>
             </div>
-            <div style="overflow-x: auto;">
-                <table id="recapTable">
+            <div class="table-wrapper">
+                <table id="mainTable">
                     <thead>
-                        <tr>
-                            <th>Waktu</th>
-                            <th>ID</th>
-                            <th>Nama</th>
-                            <th>Redflag?</th>
-                            <th>Keterangan</th>
-                            <th>Aksi</th>
-                        </tr>
+                        <tr id="tableHeaders"></tr>
                     </thead>
-                    <tbody id="recapBody">
-                    </tbody>
+                    <tbody id="tableBody"></tbody>
                 </table>
             </div>
-            <br>
-            <div style="display: flex; justify-content: space-between;">
-                <button class="btn btn-clear" onclick="clearData()">Reset/Hapus Semua Data</button>
-                <button class="btn btn-upload" id="btnGoToUpload" onclick="openUploadForm()">Upload Data ke
-                    Cloud</button>
+        </div>
+    </div>
+
+    <div id="modalAkhiriSesi"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="modal"
+            style="background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 400px; width: 85%;">
+            <h3>Menu Akhiri Sesi</h3>
+            <p style="font-size: 13px; color: #666; margin-top: -5px;">Silakan masukkan kode akses untuk melakukan
+                enkripsi dan unggahan data cloud.</p>
+
+            <div class="form-group" style="text-align: left; margin-bottom: 20px;">
+                <label for="fAccessCodeCloud" style="font-size: 13px; font-weight: bold;">Kode Akses Otorisasi *</label>
+                <input type="text" id="fAccessCodeCloud" placeholder="Masukkan kode akses sesi"
+                    style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
+            </div>
+
+            <button type="button" id="btnUploadCloudReal" class="btn" onclick="uploadDataToCloud()"
+                style="width: 100%; margin-bottom: 10px; background: #17a2b8; color: white; font-weight: bold; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">☁️
+                Upload Data ke Cloud</button>
+            <button type="button" class="btn" onclick="closeModal('modalAkhiriSesi')"
+                style="width: 100%; background: #bbb; color: black; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
+        </div>
+    </div>
+
+    <div id="modalVerifikasiCloud"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1001; justify-content: center; align-items: center;">
+        <div class="modal"
+            style="background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 420px; width: 85%; border-top: 6px solid #28a745;">
+            <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+            <h3 style="margin: 0 0 10px 0; color: #28a745;">Verifikasi Integrasi Data</h3>
+            <p id="txtVerifikasiStatus" style="font-size: 14px; color: #333; line-height: 1.4; margin-bottom: 15px;">
+                Data berhasil dikirim ke server cloud.</p>
+
+            <div
+                style="background: #f1f3f5; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+                <p style="font-size: 12px; color: #6c757d; margin: 0 0 8px 0; font-weight: 500;">Silakan klik link di
+                    bawah untuk memeriksa lembar Sheets Anda secara langsung:</p>
+                <a id="linkVerifikasiSheets" href="#" target="_blank"
+                    style="font-size: 13px; color: #007bff; font-weight: bold; text-decoration: underline; word-break: break-all;">Buka
+                    Google Sheets ↗️</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button type="button" class="btn" onclick="executeResetLokalSempurna()"
+                    style="background: #28a745; color: white; font-weight: bold; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">🟢
+                    Data Sudah Aman (Reset Memori Lokal)</button>
+
+                <button type="button" class="btn" onclick="rollbackToUploadMenu()"
+                    style="background: #ffc107; color: #212529; font-weight: bold; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">⚠️
+                    Belum Masuk? Upload Ulang</button>
             </div>
         </div>
     </div>
 
-    <div id="modalEntry" class="overlay">
-        <div class="modal">
-            <h3 id="entryTitle">Input Baru</h3>
-            <p id="displayId" style="font-weight:bold; color:var(--primary)"></p>
-            <p id="displayName" style="font-weight:normal; color:var(--primary)"></p>
-            <label style="color:var(--danger); font-weight:bold; display:block; margin:10px 0;">
-                <input type="checkbox" id="checkRedflag"> PASIEN REDFLAG
-            </label>
-            <textarea id="inputNote" placeholder="Keterangan klinis..."></textarea>
-            <button class="btn btn-success" onclick="saveToLocal()">Simpan Lokal</button>
-            <button class="btn" onclick="closeModal('modalEntry')">Batal</button>
+    <div id="modalScannerId" style="display: none; position:fixed;
+                top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
+                ">
+        <div class="card"
+            style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+            <h3 style="margin-top:0;">Scan Barcode Struk Pasien</h3>
+            <div id="idReader" style="width: 100%; border-radius: 8px; overflow: hidden; background: black;"></div>
+            <div id="scannerControls" style="display: flex; justify-content: center; gap: 10px; margin-top: 12px;">
+                <!-- <button type="button" id="btnSwitchCamera" onclick="switchCameraChannel()"
+                    style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px;">
+                    🔄 Ganti Kamera
+                </button> -->
+                <button type="button" id="btnToggleTorch" onclick="toggleScannerTorch()"
+                    style="background: #ffc107; color: #212529; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px;">
+                    💡 Nyalakan Senter
+                </button>
+            </div>
+            <button class="btn" onclick="closeScannerIdModal()"
+                style="width: 100%; margin-top: 15px; background: #bbb; color: black;">Tutup</button>
         </div>
     </div>
 
-    <div id="modalUpload" class="overlay">
-        <div class="modal">
-            <h3>Konfirmasi Upload</h3>
-            <input type="text" id="doctorName" placeholder="Nama Dokter Pemeriksa">
-            <input type="text" id="accessCode" placeholder="Kode Akses">
-            <div id="uploadError" style="color:red; font-size:12px; margin-bottom:5px; display:none;"></div>
-            <button class="btn btn-upload" id="btnDoUpload" onclick="performUpload()">Mulai Upload Sekarang</button>
-            <button class="btn" onclick="closeModal('modalUpload')">Kembali</button>
-        </div>
-    </div>
-
-    <div id="modalVerify" class="overlay">
-        <div class="modal">
-            <h3>Upload Berhasil!</h3>
-            <p>Data telah diterima server. Silakan cek link di bawah ini:</p>
-            <a id="sheetLink" href="#" target="_blank"
-                style="display:block; margin:15px 0; color:var(--primary); font-weight:bold;">BUKA GOOGLE SHEET</a>
-            <hr>
-            <p style="font-size:12px;">Apakah data sudah aman di Google Sheet?</p>
-            <button class="btn btn-success" onclick="clearData()">YA (Aman, Kosongkan Data Lokal)</button>
-            <button class="btn btn-danger" onclick="openUploadForm()">TIDAK (Upload Ulang)</button>
-        </div>
-    </div>
-
-    <script src="scanner.js"></script>
+    <script src="doctor.js"></script>
 </body>
 
 </html>

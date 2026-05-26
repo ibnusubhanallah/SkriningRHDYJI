@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Entri Data Skrining</title>
-    <link rel="manifest" href="manifest.json">
     <script src="library/html5-qrcode.min.js"></script>
     <script src="library/recta.js"></script>
     <style>
@@ -341,31 +340,6 @@
                 </div>
             </div>
 
-            <!-- <div id="modalScannerId" style="display: flex; visibility: hidden; position:fixed;
-                /*top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; */
-                ">
-                <div class="card"
-                    style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
-                    <h3 style="margin-top:0;">Scan Barcode Struk Pasien</h3>
-                    <button class="btn" onclick="closeScannerIdModal()"
-                    style="width: 100%; margin-top: 15px; background: #bbb; color: black;">Batal</button>
-                </div>
-            </div> -->
-            <div id="idReader" style="width: 100%; border-radius: 8px; overflow: hidden; background: black;"></div>
-            <div id="scannerControls" style="display: none; justify-content: center; gap: 10px; margin-top: 12px;">
-                <button type="button" id="btnSwitchCamera" onclick="switchCameraChannel()"
-                    style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px;">
-                    🔄 Ganti Kamera
-                </button>
-
-                <button type="button" id="btnToggleTorch" onclick="toggleScannerTorch()"
-                    style="background: #ffc107; color: #212529; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px;">
-                    💡 Nyalakan Senter
-                </button>
-                <p style="display: none; text-align: center; color: #666; font-size: 12px;">Arahkan kamera
-                    ke barcode pada struk pasien</p>
-            </div>
-
             <div id="formSection" class="card">
                 <h3 id="formTitle">Form Input Skrining</h3>
                 <form id="entryForm" onsubmit="handleFormSubmit(event)">
@@ -524,7 +498,7 @@
                 <div class="table-header-flex">
                     <h3 style="margin:0;">Daftar Hasil Entri Pasien</h3>
                     <div style="display: flex;">
-                        <button type="button" id="btnScanIdPasien" onclick="toggleScannerIdModal()"
+                        <button type="button" id="btnScanIdPasien" onclick="openScannerIdModal()"
                             style="display: none; background: #6c757d; border: none; padding: 0 12px; border-radius: 6px; cursor: pointer; font-size: 23px; margin-right: 10px;">📷</button>
                         <button class="btn btn-primary" id="btnOpenForm" onclick="createAndReserveNewPatient()">+ Tambah
                             Data Pasien</button>
@@ -548,18 +522,49 @@
             style="background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 400px; width: 85%;">
             <h3>Menu Akhiri Sesi</h3>
             <p style="font-size: 13px; color: #666; margin-top: -5px;">Silakan masukkan kode akses untuk melakukan
-                validasi tindakan mitigasi data.</p>
+                enkripsi dan unggahan data cloud.</p>
+
             <div class="form-group" style="text-align: left; margin-bottom: 20px;">
-                <label for="fAccessCodeCloud" style="font-size: 13px;">Kode Akses Otorisasi *</label>
-                <input type="text" id="fAccessCodeCloud" placeholder="Masukkan kode akses sesi">
+                <label for="fAccessCodeCloud" style="font-size: 13px; font-weight: bold;">Kode Akses Otorisasi *</label>
+                <input type="text" id="fAccessCodeCloud" placeholder="Masukkan kode akses sesi"
+                    style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;">
             </div>
 
-            <button class="btn btn-cloud" onclick="uploadDataToCloud()"
-                style="width: 100%; margin-bottom: 10px; background: #17a2b8;">☁️ Upload Data ke Cloud</button>
-            <button class="btn btn-danger" onclick="actualResetSesi()" style="width: 100%; margin-bottom: 10px;">🔴
-                Akhiri Sesi (Hapus Data Lokal)</button>
-            <button class="btn" onclick="closeModal('modalAkhiriSesi')"
-                style="width: 100%; background: #bbb; color: black;">Batal</button>
+            <button type="button" id="btnUploadCloudReal" class="btn" onclick="uploadDataToCloud()"
+                style="width: 100%; margin-bottom: 10px; background: #17a2b8; color: white; font-weight: bold; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">☁️
+                Upload Data ke Cloud</button>
+            <button type="button" class="btn" onclick="closeModal('modalAkhiriSesi')"
+                style="width: 100%; background: #bbb; color: black; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
+        </div>
+    </div>
+
+    <div id="modalVerifikasiCloud"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1001; justify-content: center; align-items: center;">
+        <div class="modal"
+            style="background: white; padding: 25px; border-radius: 12px; text-align: center; max-width: 420px; width: 85%; border-top: 6px solid #28a745;">
+            <div style="font-size: 40px; margin-bottom: 10px;">✅</div>
+            <h3 style="margin: 0 0 10px 0; color: #28a745;">Verifikasi Integrasi Data</h3>
+            <p id="txtVerifikasiStatus" style="font-size: 14px; color: #333; line-height: 1.4; margin-bottom: 15px;">
+                Data berhasil dikirim ke server cloud.</p>
+
+            <div
+                style="background: #f1f3f5; padding: 12px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #dee2e6;">
+                <p style="font-size: 12px; color: #6c757d; margin: 0 0 8px 0; font-weight: 500;">Silakan klik link di
+                    bawah untuk memeriksa lembar Sheets Anda secara langsung:</p>
+                <a id="linkVerifikasiSheets" href="#" target="_blank"
+                    style="font-size: 13px; color: #007bff; font-weight: bold; text-decoration: underline; word-break: break-all;">Buka
+                    Google Sheets ↗️</a>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <button type="button" class="btn" onclick="executeResetLokalSempurna()"
+                    style="background: #28a745; color: white; font-weight: bold; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">🟢
+                    Data Sudah Aman (Reset Memori Lokal)</button>
+
+                <button type="button" class="btn" onclick="rollbackToUploadMenu()"
+                    style="background: #ffc107; color: #212529; font-weight: bold; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">⚠️
+                    Belum Masuk? Upload Ulang</button>
+            </div>
         </div>
     </div>
 
@@ -580,6 +585,28 @@
             <button class="btn btn-success" onclick="connectPrinter()" style="width: 100%;">Hubungkan Printer</button>
             <button class="btn" onclick="closeModal('modalPrinter')"
                 style="width: 100%; margin-top: 10px; background: #bbb; color: black;">Tutup</button>
+        </div>
+    </div>
+
+    <div id="modalScannerId" style="display: none; position:fixed;
+                top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center;
+                ">
+        <div class="card"
+            style="background: white; padding: 20px; border-radius: 12px; max-width: 400px; width: 90%; text-align: center;">
+            <h3 style="margin-top:0;">Scan Barcode Struk Pasien</h3>
+            <div id="idReader" style="width: 100%; border-radius: 8px; overflow: hidden; background: black;"></div>
+            <div id="scannerControls" style="display: flex; justify-content: center; gap: 10px; margin-top: 12px;">
+                <!-- <button type="button" id="btnSwitchCamera" onclick="switchCameraChannel()"
+                    style="background: #6c757d; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px;">
+                    🔄 Ganti Kamera
+                </button> -->
+                <button type="button" id="btnToggleTorch" onclick="toggleScannerTorch()"
+                    style="background: #ffc107; color: #212529; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; display: flex; align-items: center; gap: 5px;">
+                    💡 Nyalakan Senter
+                </button>
+            </div>
+            <button class="btn" onclick="closeScannerIdModal()"
+                style="width: 100%; margin-top: 15px; background: #bbb; color: black;">Tutup</button>
         </div>
     </div>
 

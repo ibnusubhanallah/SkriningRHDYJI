@@ -22,6 +22,7 @@ const recordLabel = {
 // Sinkronisasi Data Awal dari LocalStorage
 document.addEventListener("DOMContentLoaded", () => {
     const savedRecords = localStorage.getItem("doctor_records");
+    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
     document.getElementById("fId").addEventListener("blur", function (e) {
         if (this.value.length > 0 && (modeID == "7 digit" ? this.value.length !== 7 : this.value.length !== 5) && e.relatedTarget.id !== "cancelBtn") {
@@ -37,7 +38,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!localStorage.getItem("doctor_records")) {
         localStorage.setItem("doctor_records", JSON.stringify([]));
-        masterRecords = [];
     }
 
     buildTableHeaders();
@@ -372,8 +372,8 @@ async function uploadDataToCloud() {
 }
 
 // FUNGSI OPSI 1: JIKA DATA SUDAH DICEK DAN AMAN
-function executeResetLokalSempurna() {
-    if (confirm("Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.")) {
+function executeResetLokalSempurna(t) {
+    if (confirm(t || "Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.")) {
         localStorage.removeItem("doctor_records");
         location.reload();
     }

@@ -533,6 +533,8 @@
             <button type="button" id="btnUploadCloudReal" class="btn" onclick="uploadDataToCloud()"
                 style="width: 100%; margin-bottom: 10px; background: #17a2b8; color: white; font-weight: bold; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">☁️
                 Upload Data ke Cloud</button>
+            <button class="btn btn-danger" onclick="executeResetLokalSempurna('Apakah yakin ingin mengakhiri sesi dan menghapus semua data lokal?')" style="width: 100%; margin-bottom: 10px;">🔴
+                Akhiri Sesi (Hapus Data Lokal)</button>
             <button type="button" class="btn" onclick="closeModal('modalAkhiriSesi')"
                 style="width: 100%; background: #bbb; color: black; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
         </div>
@@ -557,7 +559,7 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button type="button" class="btn" onclick="executeResetLokalSempurna()"
+                <button type="button" class="btn" onclick="executeResetLokalSempurna('Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.')"
                     style="background: #28a745; color: white; font-weight: bold; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">🟢
                     Data Sudah Aman (Reset Memori Lokal)</button>
 

@@ -42,6 +42,30 @@ const recordLabel = {
     }
 }
 
+function safeLocalStorageSetItem(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (error) {
+        if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+            alert("💾 Peringatan: Memori penyimpanan perangkat penuh!\n\nHapus data lama atau upload ke cloud untuk membebaskan ruang.");
+        } else {
+            alert("🚨 Gagal menyimpan data: " + error.message);
+        }
+        return false;
+    }
+}
+
+function safeLocalStorageParse(key, defaultValue = []) {
+    try {
+        const data = localStorage.getItem(key);
+        return data ? JSON.parse(data) : defaultValue;
+    } catch (error) {
+        console.error("Error parsing localStorage", error);
+        return defaultValue;
+    }
+}
+
 // Sinkronisasi Data Awal dari LocalStorage
 document.addEventListener("DOMContentLoaded", () => {
     const savedConfig = localStorage.getItem("entri_config");
@@ -99,6 +123,16 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("fId").setAttribute("minlength", modeID === "7 digit" ? "7" : "5");
     document.getElementById("fId").setAttribute("maxlength", modeID === "7 digit" ? "7" : "5");
     document.getElementById("fNamaSingkat").setAttribute("maxlength", modeID === "7 digit" ? "6" : "8");
+
+    // Auto-reconnect printer jika tersimpan di localStorage (untuk persistence)
+    const savedRectak = localStorage.getItem("RECTA_KEY");
+    const savedPort = localStorage.getItem("RECTA_PORT");
+    if (savedRectak && savedPort && configSession.modReg) {
+        printer = new Recta(savedRectak, savedPort);
+        printer.open().catch(() => {
+            printer = null; // Silent fail, user bisa setup ulang jika perlu
+        });
+    }
 });
 
 // --- LOGIKA GATEWAY ---
@@ -128,12 +162,12 @@ function initSession() {
     if (modReg && (!meja || parseInt(meja) < 1)) return alert("Isi nomor Meja Registrasi!");
 
     configSession = { wilayah, kodeLokasi, modReg, modAntro, meja };
-    localStorage.setItem("entri_config", JSON.stringify(configSession));
-    localStorage.setItem("RECTA_KEY", appkey);
-    localStorage.setItem("RECTA_PORT", appport);
+    if (!safeLocalStorageSetItem("entri_config", JSON.stringify(configSession))) return;
+    if (!safeLocalStorageSetItem("RECTA_KEY", appkey)) return;
+    if (!safeLocalStorageSetItem("RECTA_PORT", appport)) return;
 
     if (!localStorage.getItem("entri_records")) {
-        localStorage.setItem("entri_records", JSON.stringify([]));
+        safeLocalStorageSetItem("entri_records", JSON.stringify([]));
         masterRecords = [];
     }
 
@@ -393,7 +427,7 @@ function createAndReserveNewPatient() {
 
         // 4. Langsung kunci ke Storage utama
         masterRecords.unshift(newDraft);
-        localStorage.setItem("entri_records", JSON.stringify(masterRecords));
+        if (!safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords))) return;
 
         // 5. Buka form dalam mode edit untuk ID draft tersebut
         isNewDraft = true;
@@ -436,7 +470,7 @@ function loadRecordToEdit(id = null) {
         document.getElementById("fId").focus();
     }
 
-    if (configSession.modReg) {
+    if (configSession.modReg && record) {
         document.getElementById("fNamaSingkat").value = record.isDraft ? "" : record.namaSingkat;
 
         for (const [key, [label, fieldId]] of Object.entries(recordLabel.regis)) {
@@ -481,7 +515,7 @@ function hideFormSection() {
     // Jika user menekan batal saat baru membuat data baru, hapus draft kosong dari storage
     if (isNewDraft && currentEditId) {
         masterRecords = masterRecords.filter(r => r.id !== currentEditId);
-        localStorage.setItem("entri_records", JSON.stringify(masterRecords));
+        safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords));
     }
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
@@ -497,7 +531,19 @@ function handleFormSubmit(e) {
     const savedRecords = localStorage.getItem("entri_records");
     masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
-    const idValue = document.getElementById("fId").value;
+    const idValue = document.getElementById("fId").value.trim();
+    const namaSingkatValue = document.getElementById("fNamaSingkat").value.trim();
+
+    // Validasi input wajib
+    if (!idValue) return alert("⚠️ ID Peserta wajib diisi!");
+    if (!namaSingkatValue) return alert("⚠️ Nama Singkat wajib diisi!");
+
+    // Cek apakah ID sudah ada (duplicate check)
+    const recordId = modeID == "7 digit" ? idValue : decodeId5digit(idValue);
+    const existingRecord = masterRecords.find(r => r.id === recordId);
+    if (existingRecord && !existingRecord.isDraft) {
+        if (!confirm(`ID ${idValue} sudah ada di data. Overwrite data lama?`)) return;
+    }
 
     const record = {
         id: (modeID == "7 digit" ? idValue : decodeId5digit(idValue)),
@@ -548,7 +594,7 @@ function handleFormSubmit(e) {
         masterRecords.unshift(record);
     }
 
-    localStorage.setItem("entri_records", JSON.stringify(masterRecords));
+    if (!safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords))) return;
     isNewDraft = false;
     currentEditId = null;
 
@@ -652,9 +698,17 @@ function renderTableRows() {
 }
 
 // --- FUNCTION UPLOAD (PLACEHOLDER INTEGRASI CLOUD) ---
-const GOOGLE_APPS_SCRIPT_URL = localStorage.getItem("GAS_URL");
-
 async function uploadDataToCloud() {
+    // Validasi GAS URL sudah dikonfigurasi
+    const GAS_URL = localStorage.getItem("GAS_URL");
+    if (!GAS_URL) {
+        return alert("🚨 Error: Google Apps Script URL belum dikonfigurasi. Hubungi administrator.");
+    }
+
+    // Reload data paling terbaru dari localStorage untuk avoid stale data
+    const savedRecords = localStorage.getItem("entri_records");
+    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+
     // Ambil rekap data paling valid dan singkirkan draft kosong
     const validRecords = masterRecords.filter(r => !r.isDraft);
     const kodeakses = document.getElementById("fAccessCodeCloud").value.trim();
@@ -672,7 +726,7 @@ async function uploadDataToCloud() {
 
         try {
             // Tembak data ke Google Apps Script menggunakan metode POST JSON
-            const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            const response = await fetch(GAS_URL, {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain;charset=utf-8" // Avoids CORS preflight
@@ -717,8 +771,8 @@ async function uploadDataToCloud() {
 }
 
 // FUNGSI OPSI 1: JIKA DATA SUDAH DICEK DAN AMAN
-function executeResetLokalSempurna() {
-    if (confirm("Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.")) {
+function executeResetLokalSempurna(t) {
+    if (confirm(t)) {
         localStorage.removeItem("entri_config");
         localStorage.removeItem("entri_records");
         location.reload();
@@ -825,7 +879,21 @@ function openScannerIdModal() {
             loadRecordToEdit(id);
             closeScannerIdModal();
         }
-    ).catch(err => console.error("Kamera ID Error: ", err));
+    ).catch(err => {
+        console.error("Kamera ID Error: ", err);
+        // Tampilkan pesan error yang user-friendly
+        const errorMsg = err.toString().toLowerCase();
+        let msg = "Gagal mengakses kamera. ";
+        if (errorMsg.includes("permission") || errorMsg.includes("denied")) {
+            msg += "Izinkan akses kamera di pengaturan browser Anda.";
+        } else if (errorMsg.includes("not found")) {
+            msg += "Kamera tidak ditemukan.";
+        } else {
+            msg += "Coba lagi atau gunakan input manual.";
+        }
+        alert("⚠️ " + msg);
+        closeScannerIdModal();
+    });
 }
 
 function closeScannerIdModal() {

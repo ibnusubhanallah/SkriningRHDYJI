@@ -420,9 +420,8 @@ function createAndReserveNewPatient() {
 
         // 3. Buat draft kosong
         const newDraft = {
-            id: newId,
-            id_5: newId_5,
-            namaSingkat: "DRAFT KOSONG", isDraft: true
+            id: modeID === "7 digit" ? newId : newId_5,
+            namaSingkat: "DRAFT", isDraft: true
         };
 
         // 4. Langsung kunci ke Storage utama
@@ -431,7 +430,7 @@ function createAndReserveNewPatient() {
 
         // 5. Buka form dalam mode edit untuk ID draft tersebut
         isNewDraft = true;
-        loadRecordToEdit(newId);
+        loadRecordToEdit(modeID === "7 digit" ? newId : newId_5);
     } else {
         loadRecordToEdit(); // Mode input baru tanpa ID khusus jika modul Registrasi mati
     }
@@ -449,12 +448,12 @@ function loadRecordToEdit(id = null) {
     if (id) {
         record = masterRecords.find(r => r.id === id);
         if (!record) {
-            if (configSession.modReg) return;
+            if (configSession.modReg) {console.log(masterRecords); return;}
             document.getElementById("formTitle").innerText = "Form Antropometri Pasien";
             document.getElementById("formSection").style.display = "block";
         } else if (configSession.modReg) {
             currentEditId = id;
-            shownId = modeID == "7 digit" ? record.id : record.id_5;
+            shownId = record.id;
             document.getElementById("formTitle").innerText = record.isDraft ? "Form Pasien Baru (ID: " + shownId + ")" : "Edit Data Pasien (ID: " + shownId + ")";
             document.getElementById("formSection").style.display = "block";
 
@@ -523,6 +522,18 @@ function hideFormSection() {
     renderTableRows();
 }
 
+function confirmAndDeleteRecord() {
+    const id = document.getElementById("fId").value.trim();
+    if (confirm("⚠️ Apakah Anda yakin ingin menghapus data ID: " + id + "? Tindakan ini tidak dapat dibatalkan!")) {
+        masterRecords = masterRecords.filter(r => r.id !== id);
+        safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords));
+    }
+    document.getElementById("formSection").style.display = "none";
+    currentEditId = null;
+    isNewDraft = false;
+    renderTableRows();
+}
+
 // --- HANDLER SUBMIT DATA ---
 function handleFormSubmit(e) {
     e.preventDefault();
@@ -539,15 +550,14 @@ function handleFormSubmit(e) {
     if (!namaSingkatValue) return alert("⚠️ Nama Singkat wajib diisi!");
 
     // Cek apakah ID sudah ada (duplicate check)
-    const recordId = modeID == "7 digit" ? idValue : decodeId5digit(idValue);
+    const recordId = idValue;
     const existingRecord = masterRecords.find(r => r.id === recordId);
     if (existingRecord && !existingRecord.isDraft) {
         if (!confirm(`ID ${idValue} sudah ada di data. Overwrite data lama?`)) return;
     }
 
     const record = {
-        id: (modeID == "7 digit" ? idValue : decodeId5digit(idValue)),
-        id_5: (modeID == "7 digit" ? null : idValue),
+        id: idValue,
         timestamp: Number(new Date()),
         namaSingkat: (document.getElementById("fNamaSingkat").value).toUpperCase().trim(),
         isDraft: false, // Setiap submit berarti data sudah final, bukan draft lagi
@@ -587,7 +597,7 @@ function handleFormSubmit(e) {
 
     }
 
-    const index = masterRecords.findIndex(r => r.id === (modeID == "7 digit" ? idValue : decodeId5digit(idValue))); // ini bener karena fungsi decode itu untuk mengubah id 5 digit di input jadi 7 digit di records
+    const index = masterRecords.findIndex(r => r.id === idValue);
     if (index !== -1) {
         masterRecords[index] = record; // Ganti draft/data eksis dengan data final
     } else {
@@ -603,7 +613,7 @@ function handleFormSubmit(e) {
     kosongkanFormInput();
 
     if (configSession.modReg && printer) {
-        triggerRectaPrint((modeID == "7 digit" ? idValue : decodeId5digit(idValue)));
+        triggerRectaPrint(idValue);
     }
     // alert("✅ Data berhasil disimpan di LocalStorage perangkat!");
 }
@@ -650,7 +660,8 @@ function renderTableRows() {
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
 
-    const validRecords = masterRecords.filter(r => !r.isDraft);
+    // const validRecords = masterRecords.filter(r => !r.isDraft);
+    const validRecords = masterRecords
 
     if (validRecords.length === 0) {
         const totalColumns = document.getElementById("tableHeaders").children.length;
@@ -667,7 +678,7 @@ function renderTableRows() {
             actionContent += `<button onclick="triggerRectaPrint('${rec.id}')" title="Cetak Barcode" style="border:none; background:none; cursor:pointer; font-size:15px;">🖨️</button>`;
         }
 
-        let shownId = modeID == '7 digit' ? rec.id : rec.id_5
+        let shownId = rec.id;
 
         let rowCells = [
             `<td>${actionContent}</td>`,
@@ -834,7 +845,7 @@ function triggerRectaPrint(id) {
     if (!printer) return; // Abaikan jika printer tidak di-setup
     const record = masterRecords.find(r => r.id === id);
     if (!record) return;
-    let shownId = modeID == "7 digit" ? record.id : record.id_5
+    let shownId = record.id;
 
     printer.align('center')
         .text('SCREENING RHD YJI 2026')
@@ -862,7 +873,7 @@ function openScannerIdModal() {
     isTorchOn = false;
     document.getElementById("btnToggleTorch").innerText = "💡 Nyalakan Senter";
     idScannerInstance = new Html5Qrcode("idReader");
-    const config = { fps: 20, qrbox: { width: 260, height: 120 }, aspectRatio: 1.0 };
+    const config = { fps: 20, qrbox: { width: 260, height: 260 }, aspectRatio: 1.0 };
 
     idScannerInstance.start(
         { facingMode: "environment" },

@@ -203,41 +203,44 @@
         }
 
         /* Pembekuan Berurutan ke Kanan: Kolom 1 (Aksi), Kolom 2 (ID), Kolom 3 (Nama Singkat) */
-        th:nth-child(1),
-        td:nth-child(1) {
-            position: sticky;
-            left: 0;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 65px;
-            max-width: 65px;
-            width: 65px;
-            border-right: 1px solid #ccd1d9;
-            text-align: center;
-        }
+        @media screen and (min-width: 600px) {
 
-        th:nth-child(2),
-        td:nth-child(2) {
-            position: sticky;
-            left: 90px;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 75px;
-            max-width: 75px;
-            width: 75px;
-            border-right: 1px solid #ccd1d9;
-        }
+            th:nth-child(1),
+            td:nth-child(1) {
+                position: sticky;
+                left: 0;
+                z-index: 3;
+                background: #f5f7fa;
+                min-width: 65px;
+                max-width: 65px;
+                width: 65px;
+                border-right: 1px solid #ccd1d9;
+                text-align: center;
+            }
 
-        th:nth-child(3),
-        td:nth-child(3) {
-            position: sticky;
-            left: 190px;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 95px;
-            max-width: 95px;
-            width: 95px;
-            border-right: 2px solid #ccd1d9;
+            th:nth-child(2),
+            td:nth-child(2) {
+                position: sticky;
+                left: 90px;
+                z-index: 3;
+                background: #f5f7fa;
+                min-width: 75px;
+                max-width: 75px;
+                width: 75px;
+                border-right: 1px solid #ccd1d9;
+            }
+
+            th:nth-child(3),
+            td:nth-child(3) {
+                position: sticky;
+                left: 190px;
+                z-index: 3;
+                background: #f5f7fa;
+                min-width: 95px;
+                max-width: 95px;
+                width: 95px;
+                border-right: 2px solid #ccd1d9;
+            }
         }
 
         td:nth-child(1),
@@ -486,10 +489,13 @@
                         </div>
                     </div>
 
-                    <div style="margin-top: 20px; display: flex; gap: 10px;">
-                        <button type="submit" class="btn btn-success">Simpan Data</button>
-                        <button type="button" id="cancelBtn" class="btn" onclick="hideFormSection()">Batal / Hapus
-                            Draft</button>
+                    <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: space-between;">
+                        <div>
+                            <button type="submit" class="btn btn-success">Simpan Data</button>
+                            <button type="button" id="cancelBtn" class="btn" onclick="hideFormSection()">Batal / Hapus
+                                Draft</button>
+                        </div>
+                        <button type="button" id="deleteBtn" class="btn btn-danger" onclick="confirmAndDeleteRecord()">Hapus Data</button>
                     </div>
                 </form>
             </div>
@@ -533,7 +539,9 @@
             <button type="button" id="btnUploadCloudReal" class="btn" onclick="uploadDataToCloud()"
                 style="width: 100%; margin-bottom: 10px; background: #17a2b8; color: white; font-weight: bold; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">☁️
                 Upload Data ke Cloud</button>
-            <button class="btn btn-danger" onclick="executeResetLokalSempurna('Apakah yakin ingin mengakhiri sesi dan menghapus semua data lokal?')" style="width: 100%; margin-bottom: 10px;">🔴
+            <button class="btn btn-danger"
+                onclick="executeResetLokalSempurna('Apakah yakin ingin mengakhiri sesi dan menghapus semua data lokal?')"
+                style="width: 100%; margin-bottom: 10px;">🔴
                 Akhiri Sesi (Hapus Data Lokal)</button>
             <button type="button" class="btn" onclick="closeModal('modalAkhiriSesi')"
                 style="width: 100%; background: #bbb; color: black; padding: 10px; border: none; border-radius: 6px; cursor: pointer;">Batal</button>
@@ -559,7 +567,8 @@
             </div>
 
             <div style="display: flex; flex-direction: column; gap: 10px;">
-                <button type="button" class="btn" onclick="executeResetLokalSempurna('Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.')"
+                <button type="button" class="btn"
+                    onclick="executeResetLokalSempurna('Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.')"
                     style="background: #28a745; color: white; font-weight: bold; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">🟢
                     Data Sudah Aman (Reset Memori Lokal)</button>
 

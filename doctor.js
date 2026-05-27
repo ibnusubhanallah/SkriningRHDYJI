@@ -3,20 +3,28 @@ let configSession = {};
 let masterRecords = [];
 let currentEditId = null;
 const modeID = "5 digit"; // Default mode ID, bisa diubah ke "5 digit" jika ingin pakai format ID pendek internal
-
-/** 
- * kalau ada perubahan form, fungsi2 berikut ini harus ikut berubah:
- * createAndReserveNewPatient check
- * loadRecordToEdit check
- * handleFormSubmit check
- * buildTableHeaders check
- * renderTableRows check
- * 
- * yeeey udah ga harus ngubah semuanya wkwk
- * */
+const echoAbnormalFields = [
+    'vMitralRestricted', 'vMitralProlapse', 'vMitralStenosis', 'vMitralRegurgitasi', 'vMitralPansistolic',
+    'vAortaRestricted', 'vAortaProlapse', 'vAortaStenosis', 'vAortaRegurgitasi',
+    'vTrikuspidRegurgitasi', 'vPulmonalRegurgitasi', 'vTrikuspidStenosis', 'vPulmonalStenosis'
+];
 const recordLabel = {
-    redflag: ["Red Flag", "fRedflag"],
-    keterangan: ["Keterangan", "fKeterangan"],
+    redflag: ["Red Flag", "fRedflag", "checkbox"],
+    keterangan: ["Keterangan", "fKeterangan", "text"],
+    mitralrestricted: ["Mitral Restricted", "vMitralRestricted", "checkbox"],
+    mitralprolapse: ["Mitral Prolapse", "vMitralProlapse", "checkbox"],
+    mitralstenosis: ["Mitral Stenosis", "vMitralStenosis", "checkbox"],
+    mitralregurgitasi: ["Mitral Regurgitasi", "vMitralRegurgitasi", "checkbox"],
+    mitraljet: ["Panjang Jet Mitral (mm)", "vMitralJet", "text"],
+    mitralpansistolic: ["Mitral Pansistolic", "vMitralPansistolic", "checkbox"],
+    aortarestricted: ["Aorta Restricted", "vAortaRestricted", "checkbox"],
+    aortaprolapse: ["Aorta Prolapse", "vAortaProlapse", "checkbox"],
+    aortastenosis: ["Aorta Stenosis", "vAortaStenosis", "checkbox"],
+    aortaregurgitasi: ["Aorta Regurgitasi", "vAortaRegurgitasi", "checkbox"],
+    trikuspidregurgitasi: ["Trikuspid Regurgitasi", "vTrikuspidRegurgitasi", "checkbox"],
+    pulmonalregurgitasi: ["Pulmonal Regurgitasi", "vPulmonalRegurgitasi", "checkbox"],
+    trikuspidstenosis: ["Trikuspid Stenosis", "vTrikuspidStenosis", "checkbox"],
+    pulmonalstenosis: ["Pulmonal Stenosis", "vPulmonalStenosis", "checkbox"],
 }
 
 // Sinkronisasi Data Awal dari LocalStorage
@@ -35,6 +43,30 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("fId").setAttribute("minlength", modeID === "7 digit" ? "7" : "5");
     document.getElementById("fId").setAttribute("maxlength", modeID === "7 digit" ? "7" : "5");
     document.getElementById("fNamaSingkat").setAttribute("maxlength", modeID === "7 digit" ? "6" : "8");
+
+    // // Pasang pendeteksi perubahan di setiap checkbox katup
+    // echoAbnormalFields.forEach(fieldId => {
+    //     const el = document.getElementById(fieldId);
+    //     if (el) {
+    //         el.addEventListener('change', () => {
+    //             // Cek apakah ada minimal salah satu checkbox katup abnormal yang aktif
+    //             const anyAbnormal = echoAbnormalFields.some(id => document.getElementById(id).checked);
+
+    //             // Jika ada temuan katup abnormal, otomatis centang PASIEN REDFLAG
+    //             if (anyAbnormal) {
+    //                 document.getElementById('fRedflag').checked = true;
+    //             }
+    //         });
+    //     }
+    // });
+    document.getElementById('fRedflag').addEventListener('change', function () {
+        const subRedflag = document.getElementById('subRedflag');
+        if (this.checked) {
+            subRedflag.style.display = 'block';
+        } else {
+            subRedflag.style.display = 'none';
+        }
+    });
 
     if (!localStorage.getItem("doctor_records")) {
         localStorage.setItem("doctor_records", JSON.stringify([]));
@@ -137,21 +169,50 @@ function loadRecordToEdit(id = null) {
     document.getElementById("formSection").style.display = "block";
     if (id) {
         record = masterRecords.find(r => r.id === id);
+        if (record) {
+            document.getElementById("fId").value = record.id;
+            document.getElementById("fNamaSingkat").value = record.namaSingkat;
+            document.getElementById("fId").disabled = true;
+            document.getElementById("fNamaSingkat").disabled = true;
+        }
     } else {
         document.getElementById("fId").disabled = false;
         document.getElementById("fId").focus();
     }
 
     if (record) {
-        for (const [key, [label, fieldId]] of Object.entries(recordLabel)) {
-            document.getElementById(fieldId).value = record[key] ? record[key] : "";
+        for (const [key, [label, fieldId, fieldType]] of Object.entries(recordLabel)) {
+            if (fieldType === "checkbox") {
+                document.getElementById(fieldId).checked = record[key] === "Ya";
+            } else {
+                document.getElementById(fieldId).value = record[key] ? record[key] : "";
+            }
         }
+    }
+
+    const subRedflag = document.getElementById('subRedflag');
+    if (document.getElementById("fRedflag").checked) {
+        subRedflag.style.display = 'block';
+    } else {
+        subRedflag.style.display = 'none';
     }
 
     document.getElementById("formSection").scrollIntoView({ behavior: 'smooth' });
 }
 
 function hideFormSection() {
+    document.getElementById("formSection").style.display = "none";
+    currentEditId = null;
+    isNewDraft = false;
+    renderTableRows();
+}
+
+function confirmAndDeleteRecord() {
+    const id = document.getElementById("fId").value.trim();
+    if (confirm("⚠️ Apakah Anda yakin ingin menghapus data ID: " + id + "? Tindakan ini tidak dapat dibatalkan!")) {
+        masterRecords = masterRecords.filter(r => r.id !== id);
+        localStorage.setItem("doctor_records", JSON.stringify(masterRecords));
+    }
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
     isNewDraft = false;
@@ -172,52 +233,66 @@ function handleFormSubmit(e) {
         id: idValue,
         timestamp: Number(new Date()),
         namaSingkat: (document.getElementById("fNamaSingkat").value).toUpperCase().trim(),
-        isDraft: false, // Setiap submit berarti data sudah final, bukan draft lagi
-
-        // nik: document.getElementById("fNik").value || "",
-        // namaLengkap: document.getElementById("fNamaLengkap").value.trim() || "",
-        // namaSekolah: document.getElementById("fNamaSekolah").value.trim() || "",
-        // jk: document.getElementById("fJk").value || "",
-        // ttl: document.getElementById("fTtl").value || "",
-        // ortu: document.getElementById("fOrtu").value.trim() || "",
-        // nikOrtu: document.getElementById("fNikOrtu").value.trim() || "",
-        // pekerjaan: document.getElementById("fPekerjaan").value.trim() || "",
-        // hp: document.getElementById("fHp").value.trim() || "",
-
-        // bb: document.getElementById("fBb").value.trim() || "",
-        // tb: document.getElementById("fTb").value.trim() || "",
-        // td: document.getElementById("fTd").value.trim() || "",
-        // hr: document.getElementById("fHr").value.trim() || "",
-
-        demam: document.getElementById("fDemam").value || "",
-        demamNote: document.getElementById("fDemamNote").value.trim() || "",
-        tenggorokan: document.getElementById("fTenggorokan").value || "",
-        tenggorokanNote: document.getElementById("fTenggorokanNote").value.trim() || "",
-        obat: document.getElementById("fObat").value || "",
-        obatNote: document.getElementById("fObatNote").value.trim() || "",
-        rs: document.getElementById("fRs").value || "",
-        rsNote: document.getElementById("fRsNote").value.trim() || ""
     };
 
-    for (let key in recordLabel.regis) {
-        record[key] = document.getElementById(recordLabel.regis[key][1]).value.trim() || "";
+    function rekapKeterangan() {
+        let temuanKatup = [];
 
+        // Evaluasi temuan Mitral
+        if (document.getElementById('vMitralRestricted').checked) temuanKatup.push("Mitral: Restricted");
+        if (document.getElementById('vMitralProlapse').checked) temuanKatup.push("Mitral: Prolapse");
+        if (document.getElementById('vMitralStenosis').checked) temuanKatup.push("Mitral: Stenosis");
+        if (document.getElementById('vMitralRegurgitasi').checked) temuanKatup.push("Mitral: Regurgitasi Signifikan");
+        if (document.getElementById('vMitralPansistolic').checked) temuanKatup.push("Mitral: Pansistolic MR");
+        const mJet = document.getElementById('vMitralJet').value.trim();
+        if (mJet) temuanKatup.push(`Mitral Jet: ${mJet}mm`);
+
+        // Evaluasi temuan Aorta
+        if (document.getElementById('vAortaRestricted').checked) temuanKatup.push("Aorta: Restricted");
+        if (document.getElementById('vAortaProlapse').checked) temuanKatup.push("Aorta: Prolapse");
+        if (document.getElementById('vAortaStenosis').checked) temuanKatup.push("Aorta: Stenosis");
+        if (document.getElementById('vAortaRegurgitasi').checked) temuanKatup.push("Aorta: Regurgitasi Signifikan");
+
+        // Evaluasi Kanan (Trikuspid & Pulmonal)
+        if (document.getElementById('vTrikuspidRegurgitasi').checked) temuanKatup.push("TR");
+        if (document.getElementById('vPulmonalRegurgitasi').checked) temuanKatup.push("PR");
+        if (document.getElementById('vTrikuspidStenosis').checked) temuanKatup.push("TS");
+        if (document.getElementById('vPulmonalStenosis').checked) temuanKatup.push("PS");
+
+        // Gabungkan temuan checklist dan ketikan manual dokter
+        const ketManual = document.getElementById('fKeterangan').value.trim();
+        let rekapKlinisAkhir = "";
+
+        if (temuanKatup.length > 0) {
+            rekapKlinisAkhir += `[Temuan Echo: ${temuanKatup.join(', ')}] `;
+        }
+        if (ketManual) {
+            rekapKlinisAkhir += ketManual;
+        }
+
+        return rekapKlinisAkhir || "-";
     }
 
-    for (let key in recordLabel.antro) {
-        record[key] = document.getElementById(recordLabel.antro[key][1]).value.trim() || "";
-
+    for (let key in recordLabel) {
+        if (key === "keterangan") {
+            record[key] = document.getElementById(recordLabel[key][1]).value.trim();
+        } else if (recordLabel[key][2] === "checkbox") {
+            record[key] = document.getElementById(recordLabel[key][1]).checked ? "Ya" : "Tidak";
+        } else {
+            record[key] = document.getElementById(recordLabel[key][1]).value.trim() || "";
+        }
     }
 
-    const index = masterRecords.findIndex(r => r.id === (modeID == "7 digit" ? idValue : decodeId5digit(idValue))); // ini bener karena fungsi decode itu untuk mengubah id 5 digit di input jadi 7 digit di records
+    const index = masterRecords.findIndex(r => r.id === idValue);
     if (index !== -1) {
         masterRecords[index] = record; // Ganti draft/data eksis dengan data final
     } else {
         masterRecords.unshift(record);
     }
+    console.log(index);
+    console.log(masterRecords);
 
     localStorage.setItem("doctor_records", JSON.stringify(masterRecords));
-    isNewDraft = false;
     currentEditId = null;
 
     document.getElementById("formSection").style.display = "none";
@@ -229,10 +304,7 @@ function handleFormSubmit(e) {
 function kosongkanFormInput() {
     document.getElementById("fId").value = "";
     document.getElementById("fNamaSingkat").value = "";
-    for (const [key, [label, fieldId]] of Object.entries(recordLabel.regis)) {
-        document.getElementById(fieldId).value = "";
-    }
-    for (const [key, [label, fieldId]] of Object.entries(recordLabel.antro)) {
+    for (const [key, [label, fieldId]] of Object.entries(recordLabel)) {
         document.getElementById(fieldId).value = "";
     }
 }
@@ -262,7 +334,7 @@ function renderTableRows() {
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
 
-    const validRecords = masterRecords.filter(r => !r.isDraft);
+    const validRecords = masterRecords;
 
     if (validRecords.length === 0) {
         const totalColumns = document.getElementById("tableHeaders").children.length;
@@ -272,11 +344,12 @@ function renderTableRows() {
 
     validRecords.forEach(rec => {
         const tr = document.createElement("tr");
+        tr.style.textAlign = "center";
 
         // Desain tombol aksi menjadi simbol kecil hemat ruang
         let actionContent = `<button onclick="loadRecordToEdit('${rec.id}')" title="Edit Data" style="border:none; background:none; cursor:pointer; font-size:15px; margin-right:4px;">✏️</button>`;
 
-        let shownId = modeID == '7 digit' ? rec.id : rec.id_5
+        let shownId = rec.id;
 
         let rowCells = [
             `<td>${actionContent}</td>`,
@@ -284,21 +357,12 @@ function renderTableRows() {
             `<td>${rec.namaSingkat}</td>`
         ];
 
-        if (configSession.modReg) {
-            for (let key in recordLabel.regis) {
+        for (let key in recordLabel) {
+            if (key === "redflag") {
+                rowCells.push(`<td style="color:${rec[key] === "Ya" ? "red" : "#555"}; font-weight: ${rec[key] === "Ya" ? "bold" : "normal"};">${rec[key]}</td>`);
+            } else {
                 rowCells.push(`<td>${rec[key] || "-"}</td>`);
             }
-        }
-        if (configSession.modAntro) {
-            for (let key in recordLabel.antro) {
-                rowCells.push(`<td>${rec[key] || "-"}</td>`);
-            }
-            rowCells.push(
-                `<td>${rec.demam === "Ya" ? "Ya (" + rec.demamNote + ")" : rec.demam || "-"}</td>`,
-                `<td>${rec.tenggorokan === "Ya" ? "Ya (" + rec.tenggorokanNote + ")" : rec.tenggorokan || "-"}</td>`,
-                `<td>${rec.obat === "Ya" ? "Ya (" + rec.obatNote + ")" : rec.obat || "-"}</td>`,
-                `<td>${rec.rs === "Ya" ? "Ya (" + rec.rsNote + ")" : rec.rs || "-"}</td>`
-            );
         }
 
         tr.innerHTML = rowCells.join("");
@@ -311,7 +375,7 @@ const GOOGLE_APPS_SCRIPT_URL = localStorage.getItem("GAS_URL");
 
 async function uploadDataToCloud() {
     // Ambil rekap data paling valid dan singkirkan draft kosong
-    const validRecords = masterRecords.filter(r => !r.isDraft);
+    const validRecords = masterRecords;
     const kodeakses = document.getElementById("fAccessCodeCloud").value.trim();
     if (validRecords.length === 0) return alert("❌ Tidak ada data valid yang bisa diupload saat ini.");
 
@@ -333,7 +397,7 @@ async function uploadDataToCloud() {
                     "Content-Type": "text/plain;charset=utf-8" // Avoids CORS preflight
                 },
                 body: JSON.stringify({
-                    action: "regist",
+                    action: "redflag",
                     kodeakses: kodeakses,
                     config: configSession,
                     payload: validRecords
@@ -393,29 +457,6 @@ function openAkhiriSesiModal() {
 function closeModal(id) {
     document.getElementById(id).style.display = "none";
 }
-
-// Daftar element ID checklist echo abnormal yang memicu status Redflag
-const echoAbnormalFields = [
-    'vMitralRestricted', 'vMitralProlapse', 'vMitralStenosis', 'vMitralRegurgitasi', 'vMitralPansistolic',
-    'vAortaRestricted', 'vAortaProlapse', 'vAortaStenosis', 'vAortaRegurgitasi',
-    'vTrikuspidRegurgitasi', 'vPulmonalRegurgitasi', 'vTrikuspidStenosis', 'vPulmonalStenosis'
-];
-
-// Pasang pendeteksi perubahan di setiap checkbox katup
-echoAbnormalFields.forEach(fieldId => {
-    const el = document.getElementById(fieldId);
-    if (el) {
-        el.addEventListener('change', () => {
-            // Cek apakah ada minimal salah satu checkbox katup abnormal yang aktif
-            const anyAbnormal = echoAbnormalFields.some(id => document.getElementById(id).checked);
-
-            // Jika ada temuan katup abnormal, otomatis centang PASIEN REDFLAG
-            if (anyAbnormal) {
-                document.getElementById('fRedflag').checked = true;
-            }
-        });
-    }
-});
 
 let isTorchOn = false;
 let idScannerInstance = null;

@@ -173,42 +173,45 @@
         }
 
         /* Pembekuan Berurutan ke Kanan: Kolom 1 (Aksi), Kolom 2 (ID), Kolom 3 (Nama Singkat) */
-        th:nth-child(1),
-        td:nth-child(1) {
-            position: sticky;
-            left: 0;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 65px;
-            max-width: 65px;
-            width: 65px;
-            border-right: 1px solid #ccd1d9;
-            text-align: center;
-        }
+        @media screen and (min-width: 600px) {
 
-        /* th:nth-child(2),
-        td:nth-child(2) {
-            position: sticky;
-            left: 90px;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 75px;
-            max-width: 75px;
-            width: 75px;
-            border-right: 1px solid #ccd1d9;
-        }
+            th:nth-child(1),
+            td:nth-child(1) {
+                position: sticky;
+                left: 0;
+                z-index: 3;
+                background: #f5f7fa;
+                min-width: 65px;
+                max-width: 65px;
+                width: 65px;
+                border-right: 1px solid #ccd1d9;
+                text-align: center;
+            }
 
-        th:nth-child(3),
-        td:nth-child(3) {
-            position: sticky;
-            left: 190px;
-            z-index: 3;
-            background: #f5f7fa;
-            min-width: 95px;
-            max-width: 95px;
-            width: 95px;
-            border-right: 2px solid #ccd1d9;
-        } */
+            th:nth-child(2),
+            td:nth-child(2) {
+                position: sticky;
+                left: 90px;
+                z-index: 3;
+                background: #f5f7fa;
+                min-width: 75px;
+                max-width: 75px;
+                width: 75px;
+                border-right: 1px solid #ccd1d9;
+            }
+
+            th:nth-child(3),
+            td:nth-child(3) {
+                position: sticky;
+                left: 190px;
+                z-index: 3;
+                background: #f5f7fa;
+                min-width: 95px;
+                max-width: 95px;
+                width: 95px;
+                border-right: 2px solid #ccd1d9;
+            }
+        }
 
         td:nth-child(1),
         td:nth-child(2),
@@ -263,7 +266,7 @@
                     </div>
                     <div class="form-group">
                         <label for="fNamaSingkat">Nama Singkat (Maks <span id="maxNameLength">6</span>
-                            Huruf) *</label>
+                            Huruf)</label>
                         <input type="text" id="fNamaSingkat" maxlength="6">
                     </div>
                 </div>
@@ -272,9 +275,8 @@
                         <input type="checkbox" id="fRedflag"> PASIEN REDFLAG?
                     </label>
                 </div>
-                <textarea id="fKeterangan" style="margin-top: 10px;" placeholder="Keterangan klinis..."></textarea>
-                <div
-                    style="margin-top: 15px; border: 1px solid #dee2e6; border-radius: 8px; background: #fff; overflow: hidden; text-align: left;">
+                <div id="subRedflag"
+                    style="display: none; margin-top: 15px; border: 1px solid #dee2e6; border-radius: 8px; background: #fff; overflow: hidden; text-align: left;">
                     <div
                         style="background: #f1f3f5; padding: 10px 15px; font-weight: bold; font-size: 14px; color: #495057; border-bottom: 1px solid #dee2e6;">
                         📊 Temuan Klinis Katup (Echocardiography)
@@ -293,9 +295,10 @@
                             </div>
                             <div
                                 style="margin-top: 6px; font-size: 12px; display: flex; align-items: center; gap: 5px;">
-                                <span>Panjang Jet:</span>
-                                <input type="number" id="vMitralJet" placeholder="... mm"
-                                    style="width: 70px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;">
+                                <label style="font-weight: bold;">Panjang Jet:
+                                    <input type="number" id="vMitralJet" placeholder="... mm"
+                                        style="width: 70px; padding: 3px; border: 1px solid #ccc; border-radius: 4px;">
+                                </label>
                                 <label style="margin-left:10px;"><input type="checkbox" id="vMitralPansistolic">
                                     Pansistolic MR</label>
                             </div>
@@ -327,12 +330,20 @@
                             </div>
                         </div>
 
+                        <hr style="border: 0; border-top: 1px dashed #dee2e6; margin: 0;">
+
+                        <textarea id="fKeterangan" style="margin-top: 10px;"
+                            placeholder="Keterangan klinis..."></textarea>
                     </div>
                 </div>
 
-                <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button type="submit" class="btn btn-success">Simpan Data</button>
-                    <button type="button" id="cancelBtn" class="btn" onclick="hideFormSection()">Batal</button>
+                <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: space-between;">
+                    <div>
+                        <button type="submit" class="btn btn-success">Simpan Data</button>
+                        <button type="button" id="cancelBtn" class="btn" onclick="hideFormSection()">Batal</button>
+                    </div>
+                    <button type="button" id="deleteBtn" class="btn btn-danger" onclick="confirmAndDeleteRecord()">Hapus
+                        Data</button>
                 </div>
             </form>
         </div>

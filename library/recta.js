@@ -10,7 +10,9 @@ this.buffer.write([29, 107]), this.buffer.writeUInt8(65 + n), this.buffer.writeU
 
 { key: "barcodeHeight", value: function (e) { return this.buffer.write([29, 104]), this.buffer.writeUInt8(e), this } },
 
-{ key: "qrcode", value: function (t = 3, e) { return this.buffer.write([29, 40, 107, 3, 0, 49, 67, t]), this.buffer.write([29, 40, 107]), this.buffer.writeUInt8(e.length+3), this.buffer.write([0, 49, 80, 48]), this.buffer.write(e), this.buffer.write([29, 40, 107, 3, 0, 49, 81, 48]), this } },
+{ key: "setqrcode", value: function (t) { return this.buffer.write([29, 118, 48, 0, t]), this } },
+
+{ key: "qrcode", value: function (t = 3, e, y = 49) { return this.buffer.write([29, 40, 107, 3, 0, 49, 67, t]), this.buffer.write([29, 40, 107, 3, 0, 49, 69, y]), this.buffer.write([29, 40, 107]), this.buffer.writeUInt8(e.length+3), this.buffer.write([0, 49, 80, 48]), this.buffer.write(e), this.buffer.write([29, 40, 107, 3, 0, 49, 81, 48]), this } },
 
 { key: "qrcode2", value: function (e) { return this.buffer.write([10, 28, 125, 37]), this.buffer.writeUInt8(e.length), this.buffer.write(e), this.buffer.writeUInt8(10), this } },
 

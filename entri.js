@@ -448,7 +448,7 @@ function loadRecordToEdit(id = null) {
     if (id) {
         record = masterRecords.find(r => r.id === id);
         if (!record) {
-            if (configSession.modReg) {console.log(masterRecords); return;}
+            if (configSession.modReg) { console.log(masterRecords); return; }
             document.getElementById("formTitle").innerText = "Form Antropometri Pasien";
             document.getElementById("formSection").style.display = "block";
         } else if (configSession.modReg) {
@@ -848,12 +848,12 @@ function triggerRectaPrint(id) {
     let shownId = record.id;
 
     printer.align('center')
+        .mode('A', true, true, true, false)
         .text('SCREENING RHD YJI 2026')
         .text('-----------------')
-        .qrcode(6, shownId + "_" + record.namaSingkat)
-        .feed(1)
-        .mode('A', true, true, true, false)
         .text(shownId)
+        .qrcode(16, shownId + "_" + record.namaSingkat)
+        .feed(1)
         .text(record.namaSingkat)
         .mode('A', false, false, false, false)
         .feed(1)

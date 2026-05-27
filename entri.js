@@ -303,29 +303,29 @@ function toggleAnamnesisNote(selectId, noteId) {
 
 const CROCKFORD_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
 
-function encodeId5digit(id) {
-    /**
-     * Mengubah angka desimal (Base 10) menjadi string Crockford's Base 32.
-     * @param {number} num - Angka positif yang akan di-encode.
-     * @returns {string} String hasil encode Crockford's Base 32.
-     */
-    function encodeCrockford32(num) {
-        if (num === 0) return "0";
-        if (typeof num !== "number" || num < 0 || isNaN(num)) {
-            throw new Error("Input harus berupa angka bulat positif.");
-        }
-
-        let result = "";
-        let n = Math.floor(num);
-
-        while (n > 0) {
-            let remainder = n % 32;
-            result = CROCKFORD_ALPHABET.charAt(remainder) + result;
-            n = Math.floor(n / 32);
-        }
-
-        return result;
+/**
+ * Mengubah angka desimal (Base 10) menjadi string Crockford's Base 32.
+ * @param {number} num - Angka positif yang akan di-encode.
+ * @returns {string} String hasil encode Crockford's Base 32.
+ */
+function encodeCrockford32(num) {
+    if (num === 0) return "0";
+    if (typeof num !== "number" || num < 0 || isNaN(num)) {
+        throw new Error("Input harus berupa angka bulat positif.");
     }
+
+    let result = "";
+    let n = Math.floor(num);
+
+    while (n > 0) {
+        let remainder = n % 32;
+        result = CROCKFORD_ALPHABET.charAt(remainder) + result;
+        n = Math.floor(n / 32);
+    }
+
+    return result;
+}
+function encodeId5digit(id) {
 
     id = id.toString(); // 7 digit
     // 101 -> 11 (1-1 = 0 *30 +10 = 1*32 + 1 = 11)
@@ -339,72 +339,79 @@ function encodeId5digit(id) {
     return `${d1_2}${d3}${d4_5}`; //hasilnya 5 digit
 }
 
-function decodeId5digit(id) {
-    /**
-     * Mengubah string Crockford's Base 32 kembali menjadi angka desimal.
-     * @param {string} inputStr - String Crockford's Base 32 yang akan di-decode.
-     * @returns {number} Angka desimal hasil decode.
-     */
-    function decodeCrockford32(inputStr) {
-        if (typeof inputStr !== "string" || inputStr.trim() === "") {
-            throw new Error("Input harus berupa string tidak kosong.");
-        }
-
-        // 1. Normalisasi: Ubah ke huruf besar, ganti I/L -> 1, O -> 0, hapus tanda hubung jika ada
-        let normalized = inputStr
-            .toUpperCase()
-            .replace(/-/g, "") // Menghapus tanda hubung (-) yang biasa dipakai di id panjang
-            .replace(/[IL]/g, "1")
-            .replace(/O/g, "0");
-
-        let result = 0;
-
-        // 2. Hitung nilai desimalnya
-        for (let i = 0; i < normalized.length; i++) {
-            let char = normalized.charAt(i);
-            let value = CROCKFORD_ALPHABET.indexOf(char);
-
-            // Jika ada karakter ilegal yang bukan bagian dari Base 32
-            if (value === -1) {
-                throw new Error(`Karakter tidak valid ditemukan: "${char}"`);
-            }
-
-            result = result * 32 + value;
-        }
-
-        return result;
+/**
+ * Mengubah string Crockford's Base 32 kembali menjadi angka desimal.
+ * @param {string} inputStr - String Crockford's Base 32 yang akan di-decode.
+ * @returns {number} Angka desimal hasil decode.
+ */
+function decodeCrockford32(inputStr) {
+    if (typeof inputStr !== "string" || inputStr.trim() === "") {
+        throw new Error("Input harus berupa string tidak kosong.");
     }
+
+    // 1. Normalisasi: Ubah ke huruf besar, ganti I/L -> 1, O -> 0, hapus tanda hubung jika ada
+    let normalized = inputStr
+        .toUpperCase()
+        .replace(/-/g, "") // Menghapus tanda hubung (-) yang biasa dipakai di id panjang
+        .replace(/[IL]/g, "1")
+        .replace(/O/g, "0");
+
+    let result = 0;
+
+    // 2. Hitung nilai desimalnya
+    for (let i = 0; i < normalized.length; i++) {
+        let char = normalized.charAt(i);
+        let value = CROCKFORD_ALPHABET.indexOf(char);
+
+        // Jika ada karakter ilegal yang bukan bagian dari Base 32
+        if (value === -1) {
+            throw new Error(`Karakter tidak valid ditemukan: "${char}"`);
+        }
+
+        result = result * 32 + value;
+    }
+
+    return result;
+}
+function decodeId5digit(id) {
 
     id = id.toString()
     const d1 = Math.floor((decodeCrockford32(id.substring(0, 1)) - 1) / 3) + 1;
     const d2_3 = (decodeCrockford32(id.substring(0, 2)) - ((((d1 - 1) * 3) + 1) * 32)).toString().padStart(2, '0');
     const d4 = id.substring(2, 3);
     const d5_7 = decodeCrockford32(id.substring(3, 5)).toString().padStart(3, '0');
-    return `${d1}${d2_3}${d4}${d5_7}`;
+    return parseInt(`${d1}${d2_3}${d4}${d5_7}`);
 }
 
 // --- MULTI-TAB SAFE ID GENERATOR ---
 function generateSequentialID() {
-    const wMap_7 = { "Malang": 1, "Bekasi": 2, "Lampung": 3, "Minahasa Utara": 4 };
-    const d1_7 = wMap_7[configSession.wilayah] || 0;
-    const d2_3_7 = String(configSession.kodeLokasi).padStart(2, '0');
-    const d4_7 = configSession.modReg ? configSession.meja : "0"; // 0 jika modul reg mati
-    const prefix_7 = `${d1_7}${d2_3_7}${d4_7}`;
+    let prefix;
+    if (modeID == "7 digit") {
+        const wMap = { "Malang": 1, "Bekasi": 2, "Lampung": 3, "Minahasa Utara": 4 };
+        const d1 = wMap[configSession.wilayah] || 0;
+        const d2_3 = String(configSession.kodeLokasi).padStart(2, '0');
+        const d4 = configSession.modReg ? configSession.meja : "0"; // 0 jika modul reg mati
+        prefix = `${d1}${d2_3}${d4}`;
+    } else {
+        const vMap = { "Malang": 1, "Bekasi": 4, "Lampung": 7, "Minahasa Utara": 10 };
+        const d1_2 = (vMap[configSession.wilayah] || 0) * 32 // jadikan digit ke2
+        + parseInt(configSession.kodeLokasi) // tambah kode lokasi
+        const d3 = configSession.modReg ? configSession.meja : "0";
+        prefix = `${encodeCrockford32(d1_2)}${d3}`;
+    }
 
     let currentCounter = 1;
     masterRecords.forEach(rec => {
-        if (rec.id && rec.id.startsWith(prefix_7)) {
-            const lastThree = parseInt(rec.id.substring(4, 7));
-            if (lastThree >= currentCounter) {
-                currentCounter = lastThree + 1;
+        if (rec.id && rec.id.startsWith(prefix)) {
+            const lastDigit = modeID == "7 digit" ? parseInt(rec.id.substring(4, 7))
+            : decodeCrockford32(rec.id.substring(3, 5));
+            if (lastDigit >= currentCounter) {
+                currentCounter = lastDigit + 1;
             }
         }
     });
 
-    const id_7digit = `${prefix_7}${String(currentCounter).padStart(3, '0')}`;
-    const id_5digit = `${encodeId5digit(id_7digit)}`;
-
-    return [id_7digit, id_5digit];
+    return `${prefix}${modeID === "7 digit" ? String(currentCounter).padStart(3, '0') : encodeCrockford32(currentCounter).padStart(2, '0')}`;
 }
 
 // ALUR BARU: Klik Tambah Langsung Amankan ID Ke LocalStorage (Mencegah Tab Balapan)
@@ -415,12 +422,11 @@ function createAndReserveNewPatient() {
         masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
 
         // 2. Buat ID unik berdasarkan data paling update
-        const newId = generateSequentialID()[0]; // Kita pakai format ID 7-digit untuk registrasi
-        const newId_5 = generateSequentialID()[1]; // ID format pendek untuk keperluan internal/antro jika diperlukan
+        const newId = generateSequentialID();
 
         // 3. Buat draft kosong
         const newDraft = {
-            id: modeID === "7 digit" ? newId : newId_5,
+            id: newId,
             namaSingkat: "DRAFT", isDraft: true
         };
 
@@ -430,7 +436,7 @@ function createAndReserveNewPatient() {
 
         // 5. Buka form dalam mode edit untuk ID draft tersebut
         isNewDraft = true;
-        loadRecordToEdit(modeID === "7 digit" ? newId : newId_5);
+        loadRecordToEdit(newId);
     } else {
         loadRecordToEdit(); // Mode input baru tanpa ID khusus jika modul Registrasi mati
     }
@@ -724,11 +730,12 @@ async function uploadDataToCloud() {
     const validRecords = masterRecords.filter(r => !r.isDraft);
     const kodeakses = document.getElementById("fAccessCodeCloud").value.trim();
     if (validRecords.length === 0) return alert("❌ Tidak ada data valid yang bisa diupload saat ini.");
+    if (!kodeakses) return alert("⚠️ Kode Akses wajib diisi untuk otorisasi unggah data ke Google Sheets!");
 
     if (!navigator.onLine) return alert("🌐 Koneksi Gagal: Perangkat Anda sedang offline. Cari sinyal internet dahulu!");
 
     if (confirm(`Apakah Anda yakin ingin mengunggah ${validRecords.length} data pasien saat ini ke Google Sheets Cloud?`)) {
-        const btnUpload = document.querySelector("#modalAkhiriSesi .btn-cloud");
+        const btnUpload = document.querySelector("#btnUploadCloudReal");
         const originalText = btnUpload.innerText;
 
         // Kunci tombol agar tidak di-klik dua kali (Double Post Prevention)
@@ -762,7 +769,7 @@ async function uploadDataToCloud() {
 
                 // 3. Inject URL Lembar Sheets dengan parameter baris agar langsung menyorot area data baru
                 // Menambahkan komponen &range=A[startRow] agar saat diklik, browser langsung meng-highlight baris data barunya
-                document.getElementById("linkVerifikasiSheets").href = result.spreadsheetUrl;
+                document.getElementById("linkVerifikasiSheets").href = result.url;
 
                 // 4. Buka Modal Verifikasi
                 document.getElementById("modalVerifikasiCloud").style.display = "flex";

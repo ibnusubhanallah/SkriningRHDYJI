@@ -204,6 +204,7 @@ function hideFormSection() {
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
     isNewDraft = false;
+    kosongkanFormInput();
     renderTableRows();
 }
 
@@ -216,6 +217,7 @@ function confirmAndDeleteRecord() {
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
     isNewDraft = false;
+    kosongkanFormInput();
     renderTableRows();
 }
 
@@ -304,8 +306,12 @@ function handleFormSubmit(e) {
 function kosongkanFormInput() {
     document.getElementById("fId").value = "";
     document.getElementById("fNamaSingkat").value = "";
-    for (const [key, [label, fieldId]] of Object.entries(recordLabel)) {
-        document.getElementById(fieldId).value = "";
+    for (const [key, [label, fieldId, fieldType]] of Object.entries(recordLabel)) {
+        if (fieldType === "checkbox") {
+            document.getElementById(fieldId).checked = false;
+        } else {
+            document.getElementById(fieldId).value = "";
+        }
     }
 }
 
@@ -370,20 +376,26 @@ function renderTableRows() {
     });
 }
 
-// --- FUNCTION UPLOAD (PLACEHOLDER INTEGRASI CLOUD) ---
-const GOOGLE_APPS_SCRIPT_URL = localStorage.getItem("GAS_URL");
-
 async function uploadDataToCloud() {
+    const GAS_URL = localStorage.getItem("GAS_URL");
+    if (!GAS_URL) {
+        return alert("🚨 Error: Google Apps Script URL belum dikonfigurasi. Hubungi administrator.");
+    }
+
     // Ambil rekap data paling valid dan singkirkan draft kosong
     const validRecords = masterRecords;
     const kodeakses = document.getElementById("fAccessCodeCloud").value.trim();
     if (validRecords.length === 0) return alert("❌ Tidak ada data valid yang bisa diupload saat ini.");
+    const namaDokter = document.getElementById("fNamaDokter").value.trim();
+    if (!kodeakses) return alert("⚠️ Kode Akses wajib diisi untuk otorisasi unggah data ke Google Sheets!");
+    if (!namaDokter) return alert("⚠️ Nama Dokter wajib diisi untuk keperluan dokumentasi di Google Sheets!");
 
     if (!navigator.onLine) return alert("🌐 Koneksi Gagal: Perangkat Anda sedang offline. Cari sinyal internet dahulu!");
 
     if (confirm(`Apakah Anda yakin ingin mengunggah ${validRecords.length} data pasien saat ini ke Google Sheets Cloud?`)) {
-        const btnUpload = document.querySelector("#modalAkhiriSesi .btn-cloud");
+        const btnUpload = document.querySelector("#btnUploadCloudReal");
         const originalText = btnUpload.innerText;
+
 
         // Kunci tombol agar tidak di-klik dua kali (Double Post Prevention)
         btnUpload.disabled = true;
@@ -391,7 +403,7 @@ async function uploadDataToCloud() {
 
         try {
             // Tembak data ke Google Apps Script menggunakan metode POST JSON
-            const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+            const response = await fetch(GAS_URL, {
                 method: "POST",
                 headers: {
                     "Content-Type": "text/plain;charset=utf-8" // Avoids CORS preflight
@@ -399,7 +411,7 @@ async function uploadDataToCloud() {
                 body: JSON.stringify({
                     action: "redflag",
                     kodeakses: kodeakses,
-                    config: configSession,
+                    namadokter: namaDokter,
                     payload: validRecords
                 })
             });
@@ -416,7 +428,7 @@ async function uploadDataToCloud() {
 
                 // 3. Inject URL Lembar Sheets dengan parameter baris agar langsung menyorot area data baru
                 // Menambahkan komponen &range=A[startRow] agar saat diklik, browser langsung meng-highlight baris data barunya
-                document.getElementById("linkVerifikasiSheets").href = result.spreadsheetUrl;
+                document.getElementById("linkVerifikasiSheets").href = result.url;
 
                 // 4. Buka Modal Verifikasi
                 document.getElementById("modalVerifikasiCloud").style.display = "flex";

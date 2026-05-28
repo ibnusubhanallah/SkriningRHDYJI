@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistem Entri Data Skrining</title>
+    <script src="library/localforage.min.js"></script>
     <script src="library/html5-qrcode.min.js"></script>
     <script src="library/recta.js"></script>
     <style>
@@ -327,7 +328,7 @@
                         Semikolon ';')</label>
                     <input type="file" id="fImportCsv" accept=".csv" style="margin-top: 5px; font-size: 12px;">
                     <div id="csvImportModeText" style="font-size: 11px; color: #666; margin-top: 2px;">Format Kolom CSV:
-                        NIK;Nama Lengkap;JK;Tanggal Lahir;Nama Ortu;No HP</div>
+                        NIK;NISN;Nama Lengkap;Nama Sekolah;Jenis Kelamin;Tanggal Lahir (dd-mm-yyyy);Nama Ortu;Pekerjaan Ortu;NIK Ortu;No HP</div>
                 </div>
             </div>
             <button class="btn btn-primary" style="width: 100%;" onclick="initSession()">Buka Aplikasi Entri</button>
@@ -374,7 +375,7 @@
                             style="display: none; background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #1a73e8;">
                             <label style="color: #1a73e8; margin-bottom: 2px;">🔍 Pencarian Cepat Data Sasaran
                                 (Offline)</label>
-                            <p style="font-size: 11px; color: #555; margin: 0 0 8px 0;">Ketik Nama / NIK / Tanggal Lahir
+                            <p style="font-size: 11px; color: #555; margin: 0 0 8px 0;">Ketik Nama / NIK / NISN / Tanggal Lahir
                                 (dd-mm-yyyy). Gunakan spasi untuk filter ganda (Contoh: "05-12 Ahmad").</p>
 
                             <input type="text" id="fSearchPreRegInput"

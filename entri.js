@@ -1,4 +1,11 @@
 // --- KONFIGURASI STATE UTAMA ---
+localforage.config({
+    driver: localforage.INDEXEDDB, // Paksa menggunakan mesin IndexedDB murni
+    name: 'RHD_YJI_Screening_2026', // Nama database utama
+    version: 1.0,
+    storeName: 'keyvaluepairs', // Nama tabel internal
+    description: 'Database offline untuk data sasaran CSV dan rekap klinis pasien'
+});
 let configSession = {};
 let masterRecords = [];
 let currentEditId = null;
@@ -43,38 +50,37 @@ const recordLabel = {
     }
 }
 
-function safeLocalStorageSetItem(key, value) {
-    try {
-        localStorage.setItem(key, value);
-        return true;
-    } catch (error) {
-        if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-            alert("💾 Peringatan: Memori penyimpanan perangkat penuh!\n\nHapus data lama atau upload ke cloud untuk membebaskan ruang.");
-        } else {
-            alert("🚨 Gagal menyimpan data: " + error.message);
-        }
-        return false;
-    }
-}
+// function safeLocalStorageSetItem(key, value) {
+//     try {
+//         localStorage.setItem(key, value);
+//         return true;
+//     } catch (error) {
+//         if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
+//             alert("💾 Peringatan: Memori penyimpanan perangkat penuh!\n\nHapus data lama atau upload ke cloud untuk membebaskan ruang.");
+//         } else {
+//             alert("🚨 Gagal menyimpan data: " + error.message);
+//         }
+//         return false;
+//     }
+// }
 
-function safeLocalStorageParse(key, defaultValue = []) {
-    try {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : defaultValue;
-    } catch (error) {
-        console.error("Error parsing localStorage", error);
-        return defaultValue;
-    }
-}
+// function safeLocalStorageParse(key, defaultValue = []) {
+//     try {
+//         const data = localStorage.getItem(key);
+//         return data ? JSON.parse(data) : defaultValue;
+//     } catch (error) {
+//         console.error("Error parsing localStorage", error);
+//         return defaultValue;
+//     }
+// }
 
-// Sinkronisasi Data Awal dari LocalStorage
-document.addEventListener("DOMContentLoaded", () => {
-    const savedConfig = localStorage.getItem("entri_config");
-    const savedRecords = localStorage.getItem("entri_records");
+document.addEventListener("DOMContentLoaded", async () => {
+    const savedConfig = await localforage.getItem("entri_config");
+    const savedRecords = await localforage.getItem("entri_records");
 
     if (savedConfig) {
-        configSession = JSON.parse(savedConfig);
-        masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+        configSession = savedConfig;
+        masterRecords = savedRecords ? savedRecords : [];
         showMainDashboard();
     } else {
         document.getElementById("gatewayScreen").style.display = "block";
@@ -125,9 +131,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("fId").setAttribute("maxlength", modeID === "7 digit" ? "7" : "5");
     document.getElementById("fNamaSingkat").setAttribute("maxlength", modeID === "7 digit" ? "6" : "8");
 
-    // Auto-reconnect printer jika tersimpan di localStorage (untuk persistence)
-    const savedRectak = localStorage.getItem("RECTA_KEY");
-    const savedPort = localStorage.getItem("RECTA_PORT");
+
+    const savedRectak = await localforage.getItem("RECTA_KEY");
+    const savedPort = await localforage.getItem("RECTA_PORT");
     if (savedRectak && savedPort && configSession.modReg) {
         printer = new Recta(savedRectak, savedPort);
         printer.open().catch(() => {
@@ -147,13 +153,13 @@ function togglePrinterField() {
     document.getElementById("printerFieldWrapper").style.display = isPrinterChecked ? "block" : "none";
 }
 
-function initSession() {
+async function initSession() {
     const wilayah = document.getElementById("gwWilayah").value;
     const kodeLokasi = document.getElementById("gwKodeLokasi").value.trim();
     const modReg = document.getElementById("modReg").checked;
     const modAntro = document.getElementById("modAntro").checked;
     const meja = document.getElementById("gwMeja").value.trim();
-    const appkey = document.getElementById("gwAppKey").value.trim();
+    const appkey = document.getElementById("gwAppKey").value.trim() || "";
     const appport = document.getElementById("gwAppPort").value.trim();
 
     if (!wilayah) return alert("Pilih Wilayah terlebih dahulu!");
@@ -163,14 +169,19 @@ function initSession() {
     if (modReg && (!meja || parseInt(meja) < 1)) return alert("Isi nomor Meja Registrasi!");
 
     configSession = { wilayah, kodeLokasi, modReg, modAntro, meja };
-    if (!safeLocalStorageSetItem("entri_config", JSON.stringify(configSession))) return;
-    if (!safeLocalStorageSetItem("RECTA_KEY", appkey)) return;
-    if (!safeLocalStorageSetItem("RECTA_PORT", appport)) return;
+    if (!await localforage.setItem("entri_config", configSession)) return;
+    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
+    await localforage.setItem("RECTA_KEY", appkey);
+    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
+    await localforage.setItem("RECTA_PORT", appport);
 
-    if (!localStorage.getItem("entri_records")) {
-        safeLocalStorageSetItem("entri_records", JSON.stringify([]));
+    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
+    if (!await localforage.getItem("entri_records")) {
+        await localforage.setItem("entri_records", []);
         masterRecords = [];
     }
+
+    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
 
     document.getElementById("daftar-sekolah").innerHTML = listSekolah[configSession.wilayah]?.map(school => `<option value="${school}"></option>`).join('') || '';
 
@@ -190,6 +201,7 @@ function initSession() {
 
 // --- UI RE-VALIDATION ENGINE ---
 function showMainDashboard() {
+    console.log("Menampilkan dashboard utama dengan konfigurasi sesi:", configSession);
     document.getElementById("gatewayScreen").style.display = "none";
     document.getElementById("mainScreen").style.display = "block";
 
@@ -426,12 +438,12 @@ function generateSequentialID() {
     return `${prefix}${modeID === "7 digit" ? String(currentCounter).padStart(3, '0') : encodeCrockford32(currentCounter).padStart(2, '0')}`;
 }
 
-// ALUR BARU: Klik Tambah Langsung Amankan ID Ke LocalStorage (Mencegah Tab Balapan)
-function createAndReserveNewPatient() {
+// ALUR BARU: Klik Tambah Langsung Amankan ID Ke LocalForage (Mencegah Tab Balapan)
+async function createAndReserveNewPatient() {
     if (configSession.modReg) {
-        // 1. Ambil data segar dari localStorage dulu (Cek aktivitas tab sebelah)
-        const savedRecords = localStorage.getItem("entri_records");
-        masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+        // 1. Ambil data segar dari localforage dulu (Cek aktivitas tab sebelah)
+        const savedRecords = await localforage.getItem("entri_records");
+        masterRecords = savedRecords ? savedRecords : [];
 
         // 2. Buat ID unik berdasarkan data paling update
         const newId = generateSequentialID();
@@ -442,9 +454,9 @@ function createAndReserveNewPatient() {
             namaSingkat: "DRAFT", isDraft: true
         };
 
-        // 4. Langsung kunci ke Storage utama
+        // 4. Langsung kunci ke forage utama
         masterRecords.unshift(newDraft);
-        if (!safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords))) return;
+        if (!await localforage.setItem("entri_records", masterRecords)) return;
 
         // 5. Buka form dalam mode edit untuk ID draft tersebut
         isNewDraft = true;
@@ -457,10 +469,20 @@ function createAndReserveNewPatient() {
 
 
 
-function loadRecordToEdit(id = null) {
-    // Ambil data paling fresh dari storage sebelum memuat ke form
-    const savedRecords = localStorage.getItem("entri_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+async function loadRecordToEdit(id = null) {
+    // Ambil data paling fresh dari forage sebelum memuat ke form
+    const savedRecords = await localforage.getItem("entri_records");
+    masterRecords = savedRecords ? savedRecords : [];
+
+    function copyNSkeSearch() {
+        document.getElementById("fSearchPreRegInput").value = this.value;
+        handlePreRegSearch();
+    }
+
+    document.getElementById("fNamaSingkat").addEventListener("input", copyNSkeSearch);
+    document.getElementById("fNamaSingkat").addEventListener("blur", function () {
+        this.removeEventListener("input", copyNSkeSearch);
+    });
 
     let record = null;
     let shownId = null;
@@ -529,11 +551,11 @@ function loadRecordToEdit(id = null) {
     document.getElementById("formSection").scrollIntoView({ behavior: 'smooth' });
 }
 
-function hideFormSection() {
-    // Jika user menekan batal saat baru membuat data baru, hapus draft kosong dari storage
+async function hideFormSection() {
+    // Jika user menekan batal saat baru membuat data baru, hapus draft kosong dari forage
     if (isNewDraft && currentEditId) {
         masterRecords = masterRecords.filter(r => r.id !== currentEditId);
-        safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords));
+        await localforage.setItem("entri_records", masterRecords);
     }
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
@@ -541,11 +563,11 @@ function hideFormSection() {
     renderTableRows();
 }
 
-function confirmAndDeleteRecord() {
+async function confirmAndDeleteRecord() {
     const id = document.getElementById("fId").value.trim();
     if (confirm("⚠️ Apakah Anda yakin ingin menghapus data ID: " + id + "? Tindakan ini tidak dapat dibatalkan!")) {
         masterRecords = masterRecords.filter(r => r.id !== id);
-        safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords));
+        await localforage.setItem("entri_records", masterRecords);
     }
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
@@ -554,12 +576,12 @@ function confirmAndDeleteRecord() {
 }
 
 // --- HANDLER SUBMIT DATA ---
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
     e.preventDefault();
 
-    // Pastikan kita mengambil data storage paling baru lagi untuk menghindari overwriting tab lain
-    const savedRecords = localStorage.getItem("entri_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+    // Pastikan kita mengambil data forage paling baru lagi untuk menghindari overwriting tab lain
+    const savedRecords = await localforage.getItem("entri_records");
+    masterRecords = savedRecords ? savedRecords : [];
 
     const idValue = document.getElementById("fId").value.trim();
     const namaSingkatValue = document.getElementById("fNamaSingkat").value.trim();
@@ -623,7 +645,7 @@ function handleFormSubmit(e) {
         masterRecords.unshift(record);
     }
 
-    if (!safeLocalStorageSetItem("entri_records", JSON.stringify(masterRecords))) return;
+    if (!await localforage.setItem("entri_records", masterRecords)) return;
     isNewDraft = false;
     currentEditId = null;
 
@@ -634,7 +656,7 @@ function handleFormSubmit(e) {
     if (configSession.modReg && printer) {
         triggerRectaPrint(idValue);
     }
-    // alert("✅ Data berhasil disimpan di LocalStorage perangkat!");
+    // alert("✅ Data berhasil disimpan di LocalForage perangkat!");
 }
 
 function kosongkanFormInput() {
@@ -672,9 +694,9 @@ function buildTableHeaders() {
     tr.innerHTML = headers.join("");
 }
 
-function renderTableRows() {
-    const savedRecords = localStorage.getItem("entri_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+async function renderTableRows() {
+    const savedRecords = await localforage.getItem("entri_records");
+    masterRecords = savedRecords ? savedRecords : [];
 
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
@@ -735,9 +757,9 @@ async function uploadDataToCloud() {
         return alert("🚨 Error: Google Apps Script URL belum dikonfigurasi. Hubungi administrator.");
     }
 
-    // Reload data paling terbaru dari localStorage untuk avoid stale data
-    const savedRecords = localStorage.getItem("entri_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+    // Reload data paling terbaru dari localforage untuk avoid stale data
+    const savedRecords = await localforage.getItem("entri_records");
+    masterRecords = savedRecords ? savedRecords : [];
 
     // Ambil rekap data paling valid dan singkirkan draft kosong
     const validRecords = masterRecords.filter(r => !r.isDraft);
@@ -802,16 +824,16 @@ async function uploadDataToCloud() {
 }
 
 // FUNGSI OPSI 1: JIKA DATA SUDAH DICEK DAN AMAN
-function executeResetLokalSempurna(t) {
+async function executeResetLokalSempurna(t) {
     if (confirm(t)) {
-        localStorage.removeItem("entri_config");
-        localStorage.removeItem("entri_records");
+        await localforage.removeItem("entri_config");
+        await localforage.removeItem("entri_records");
         location.reload();
     }
 }
 
 // FUNGSI OPSI 2: JIKA INGIN KEMBALI KARENA INGIN UPLOAD ULANG
-function rollbackToUploadMenu() {
+async function rollbackToUploadMenu() {
     // Tutup modal verifikasi, balikkan ke modal input kode akses awal
     document.getElementById("modalVerifikasiCloud").style.display = "none";
     document.getElementById("modalAkhiriSesi").style.display = "flex";
@@ -824,9 +846,9 @@ function openAkhiriSesiModal() {
     document.getElementById("modalAkhiriSesi").style.display = "flex";
 }
 
-function openPrinterModal() {
-    document.getElementById("pRectaKey").value = localStorage.getItem("RECTA_KEY") || "";
-    document.getElementById("pRectaPort").value = localStorage.getItem("RECTA_PORT") || "1811";
+async function openPrinterModal() {
+    document.getElementById("pRectaKey").value = await localforage.getItem("RECTA_KEY") || "";
+    document.getElementById("pRectaPort").value = await localforage.getItem("RECTA_PORT") || "1811";
     document.getElementById("printerStatusText").innerText = printer ? "🟢 Printer Terhubung" : "⚪ Printer Belum Terhubung";
     document.getElementById("printerStatusText").style.color = printer ? "#28a745" : "#555";
     document.getElementById("modalPrinter").style.display = "flex";
@@ -847,9 +869,9 @@ function connectPrinter() {
     // Inisialisasi Recta berbasis input user
     printer = new Recta(key, port);
 
-    printer.open().then(() => {
-        localStorage.setItem("RECTA_KEY", key);
-        localStorage.setItem("RECTA_PORT", port);
+    printer.open().then(async () => {
+        await localforage.setItem("RECTA_KEY", key);
+        await localforage.setItem("RECTA_PORT", port);
         statusText.innerText = "🟢 Printer Berhasil Terhubung!";
         statusText.style.color = "#28a745";
         setTimeout(() => closeModal('modalPrinter'), 1200);
@@ -911,7 +933,7 @@ function openScannerIdModal() {
             document.getElementById("fId").disabled = true;
             document.getElementById("fNamaSingkat").value = scannedText.split("_")[1] || ""; // Ambil nama singkat dari QR jika ada
             document.getElementById("fNamaSingkat").disabled = true;
-            // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localstorage
+            // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localforage
             loadRecordToEdit(id);
             closeScannerIdModal();
         }
@@ -979,7 +1001,7 @@ function turnOffTorchIfActive() {
 let preRegisteredDatabase = [];
 
 // Fungsi memotong baris teks CSV menjadi Array Objek
-function prosesParsingDataCsv(text) {
+async function prosesParsingDataCsv(text) {
     const lines = text.split("\n");
     let parsedData = [];
 
@@ -993,17 +1015,21 @@ function prosesParsingDataCsv(text) {
         if (columns.length >= 4) {
             parsedData.push({
                 nik: columns[0] ? columns[0].trim() : "",
-                namaLengkap: columns[1] ? columns[1].trim() : "",
-                jk: columns[2] ? columns[2].trim() : "",
-                ttl: columns[3] ? columns[3].trim() : "",
-                ortu: columns[4] ? columns[4].trim() : "-",
-                hp: columns[5] ? columns[5].trim() : "-"
+                nisn: columns[1] ? columns[1].trim() : "",
+                namaLengkap: columns[2] ? columns[2].trim() : "",
+                namaSekolah: columns[3] ? columns[3].trim() : "",
+                jk: columns[4] ? columns[4].trim() : "",
+                ttl: columns[5] ? columns[5].trim() : "",
+                ortu: columns[6] ? columns[6].trim() : "-",
+                pekerjaanOrtu: columns[7] ? columns[7].trim() : "-",
+                nikOrtu: columns[8] ? columns[8].trim() : "-",
+                hp: columns[9] ? columns[9].trim() : "-"
             });
         }
     }
 
     if (parsedData.length > 0) {
-        safeLocalStorageSetItem("prereg_database", JSON.stringify(parsedData));
+        await localforage.setItem("prereg_database", parsedData);
         preRegisteredDatabase = parsedData;
         console.log(`Successfully loaded ${parsedData.length} data target sasaran.`);
     }
@@ -1011,9 +1037,9 @@ function prosesParsingDataCsv(text) {
 
 // Pemicu pengecekan apakah ada data sasaran saat form tambah data dibuka
 // (Panggil fungsi ini di dalam fungsi createAndReserveNewPatient() Dokter)
-function checkPreRegVisibility() {
+async function checkPreRegVisibility() {
     if (preRegisteredDatabase.length === 0) {
-        preRegisteredDatabase = safeLocalStorageParse("prereg_database");
+        preRegisteredDatabase = await localforage.getItem("prereg_database");
     }
 
     // Tampilkan kotak pencarian jika database CSV tidak kosong
@@ -1024,7 +1050,7 @@ function checkPreRegVisibility() {
 }
 
 // --- LOGIKA PENCERIAN PINTAR MULTI-ELEMEN ---
-function handlePreRegSearch() {
+async function handlePreRegSearch() {
     const query = document.getElementById("fSearchPreRegInput").value.toLowerCase().trim();
     const dropdown = document.getElementById("preRegResultsDropdown");
 
@@ -1039,7 +1065,7 @@ function handlePreRegSearch() {
 
     // Saring database berdasarkan seluruh keyword yang diinput
     const filtered = preRegisteredDatabase.filter(anak => {
-        const gabunganTeksData = `${anak.nik} ${anak.namaLengkap.toLowerCase()} ${anak.ttl}`;
+        const gabunganTeksData = `${anak.nik} ${anak.nisn} ${anak.namaLengkap.toLowerCase()} ${anak.ttl}`;
         return keywords.every(kw => gabunganTeksData.includes(kw));
     });
 
@@ -1056,7 +1082,7 @@ function handlePreRegSearch() {
             div.style.cursor = "pointer";
             div.style.fontSize = "13px";
             div.style.textAlign = "left";
-            div.innerHTML = `<strong>${anak.namaLengkap}</strong> (${anak.jk === "Laki-laki" ? 'L' : 'P'}) <br> <small style="color:#666;">NIK: ${anak.nik || '-'} | TTL: ${anak.ttl}</small>`;
+            div.innerHTML = `<strong>${anak.namaLengkap}</strong> (${anak.jk === "Laki-laki" ? 'L' : 'P'}) <br> <small style="color:#666;">NIK: ${anak.nik || '-'} | NISN: ${anak.nisn || '-'} | TTL: ${anak.ttl}</small>`;
 
             // Aksi saat item hasil pencarian diklik: Autofill langsung mengisi form!
             div.onclick = function () {
@@ -1075,13 +1101,18 @@ function autofillFormFromPreReg(anak) {
     // 1. Ekstrak nama singkat (Maksimal 6 huruf pertama sebagai konfirmatori sesuai rules Dokter)
     const namaSingkatOtomatis = anak.namaLengkap.split(" ")[0].substring(0, 6).toUpperCase();
 
-    document.getElementById("fNamaSingkat").value = namaSingkatOtomatis;
+    if (document.getElementById("fNamaSingkat").value === "") {
+        document.getElementById("fNamaSingkat").value = namaSingkatOtomatis;
+    }
     document.getElementById("fNik").value = anak.nik;
+    document.getElementById("fNisn").value = anak.nisn;
     document.getElementById("fNamaLengkap").value = anak.namaLengkap;
-    document.getElementById("fOrtu").value = anak.ortu;
-    document.getElementById("fHp").value = anak.hp;
     document.getElementById("fTtl").value = anak.ttl;
     document.getElementById("fJk").value = anak.jk;
+    document.getElementById("fOrtu").value = anak.ortu;
+    document.getElementById("fPekerjaan").value = anak.pekerjaanOrtu;
+    document.getElementById("fNikOrtu").value = anak.nikOrtu;
+    document.getElementById("fHp").value = anak.hp;
 
     // Jika data dari CSV memiliki NIK lengkap, jalankan fungsi penguncian otomatis Dokter
     if (anak.nik && anak.nik.length === 16) {
@@ -1096,5 +1127,5 @@ function autofillFormFromPreReg(anak) {
         document.getElementById("fTtl").disabled = false;
     }
 
-    alert(`⚡ Autofill Berhasil: Data ${anak.namaLengkap} berhasil dimuat ke form!`);
+    // alert(`⚡ Autofill Berhasil: Data ${anak.namaLengkap} berhasil dimuat ke form!`);
 }

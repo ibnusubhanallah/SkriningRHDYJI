@@ -1,2 +1,3 @@
-NIK;Nama Lengkap;JK;Tanggal Lahir;Nama Ortu;No HP
-3674041812000002;Muhammad Farhan Abdul Rahman;Laki-laki;18-12-2000;Subhanallah;085172200643
+NIK;NISN;Nama Lengkap;Nama Sekolah;Jenis Kelamin;Tanggal Lahir (dd-mm-yyyy);Nama Ortu;Pekerjaan Ortu;NIK Ortu;No HP
+3674041812000002;;Muhammad Farhan Abdul Rahman;;Laki-laki;18-12-2000;Subhanallah;;;085172200643
+nik2;nisn2;farhan2;;Laki-laki;11-11-2000;n;k;n;h

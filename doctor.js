@@ -1,4 +1,11 @@
 // --- KONFIGURASI STATE UTAMA ---
+localforage.config({
+    driver: localforage.INDEXEDDB, // Paksa menggunakan mesin IndexedDB murni
+    name: 'RHD_YJI_Screening_2026', // Nama database utama
+    version: 1.0,
+    storeName: 'keyvaluepairs', // Nama tabel internal
+    description: 'Database offline untuk data sasaran CSV dan rekap klinis pasien'
+});
 let configSession = {};
 let masterRecords = [];
 let currentEditId = null;
@@ -27,10 +34,10 @@ const recordLabel = {
     pulmonalstenosis: ["Pulmonal Stenosis", "vPulmonalStenosis", "checkbox"],
 }
 
-// Sinkronisasi Data Awal dari LocalStorage
-document.addEventListener("DOMContentLoaded", () => {
-    const savedRecords = localStorage.getItem("doctor_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+
+document.addEventListener("DOMContentLoaded", async () => {
+    const savedRecords = await localforage.getItem("doctor_records");
+    masterRecords = savedRecords ? savedRecords : [];
 
     document.getElementById("fId").addEventListener("blur", function (e) {
         if (this.value.length > 0 && (modeID == "7 digit" ? this.value.length !== 7 : this.value.length !== 5) && e.relatedTarget.id !== "cancelBtn") {
@@ -68,8 +75,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    if (!localStorage.getItem("doctor_records")) {
-        localStorage.setItem("doctor_records", JSON.stringify([]));
+    if (!await localforage.getItem("doctor_records")) {
+        await localforage.setItem("doctor_records", []);
     }
 
     buildTableHeaders();
@@ -159,10 +166,10 @@ function decodeId5digit(id) {
 }
 
 
-function loadRecordToEdit(id = null) {
+async function loadRecordToEdit(id = null) {
     // Ambil data paling fresh dari storage sebelum memuat ke form
-    const savedRecords = localStorage.getItem("doctor_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+    const savedRecords = await localforage.getItem("doctor_records");
+    masterRecords = savedRecords ? savedRecords : [];
 
     let record = null;
     let shownId = null;
@@ -208,11 +215,11 @@ function hideFormSection() {
     renderTableRows();
 }
 
-function confirmAndDeleteRecord() {
+async function confirmAndDeleteRecord() {
     const id = document.getElementById("fId").value.trim();
     if (confirm("⚠️ Apakah Anda yakin ingin menghapus data ID: " + id + "? Tindakan ini tidak dapat dibatalkan!")) {
         masterRecords = masterRecords.filter(r => r.id !== id);
-        localStorage.setItem("doctor_records", JSON.stringify(masterRecords));
+        await localforage.setItem("doctor_records", masterRecords);
     }
     document.getElementById("formSection").style.display = "none";
     currentEditId = null;
@@ -222,12 +229,12 @@ function confirmAndDeleteRecord() {
 }
 
 // --- HANDLER SUBMIT DATA ---
-function handleFormSubmit(e) {
+async function handleFormSubmit(e) {
     e.preventDefault();
 
     // Pastikan kita mengambil data storage paling baru lagi untuk menghindari overwriting tab lain
-    const savedRecords = localStorage.getItem("doctor_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+    const savedRecords = await localforage.getItem("doctor_records");
+    masterRecords = savedRecords ? savedRecords : [];
 
     const idValue = document.getElementById("fId").value;
 
@@ -294,13 +301,12 @@ function handleFormSubmit(e) {
     console.log(index);
     console.log(masterRecords);
 
-    localStorage.setItem("doctor_records", JSON.stringify(masterRecords));
+    await localforage.setItem("doctor_records", masterRecords);
     currentEditId = null;
 
     document.getElementById("formSection").style.display = "none";
     renderTableRows();
     kosongkanFormInput();
-    // alert("✅ Data berhasil disimpan di LocalStorage perangkat!");
 }
 
 function kosongkanFormInput() {
@@ -333,9 +339,9 @@ function buildTableHeaders() {
     tr.innerHTML = headers.join("");
 }
 
-function renderTableRows() {
-    const savedRecords = localStorage.getItem("doctor_records");
-    masterRecords = savedRecords ? JSON.parse(savedRecords) : [];
+async function renderTableRows() {
+    const savedRecords = await localforage.getItem("doctor_records");
+    masterRecords = savedRecords ? savedRecords : [];
 
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
@@ -448,15 +454,15 @@ async function uploadDataToCloud() {
 }
 
 // FUNGSI OPSI 1: JIKA DATA SUDAH DICEK DAN AMAN
-function executeResetLokalSempurna(t) {
+async function executeResetLokalSempurna(t) {
     if (confirm(t || "Apakah Dokter sudah memastikan datanya masuk utuh di Google Sheets?\nTindakan ini akan menghapus memori lokal tablet untuk persiapan sesi berikutnya.")) {
-        localStorage.removeItem("doctor_records");
+        await localforage.removeItem("doctor_records");
         location.reload();
     }
 }
 
 // FUNGSI OPSI 2: JIKA INGIN KEMBALI KARENA INGIN UPLOAD ULANG
-function rollbackToUploadMenu() {
+async function rollbackToUploadMenu() {
     // Tutup modal verifikasi, balikkan ke modal input kode akses awal
     document.getElementById("modalVerifikasiCloud").style.display = "none";
     document.getElementById("modalAkhiriSesi").style.display = "flex";
@@ -470,7 +476,7 @@ function closeModal(id) {
     document.getElementById(id).style.display = "none";
 }
 
-let isTorchOn = false;
+let isTorchOn = false;``
 let idScannerInstance = null;
 
 function openScannerIdModal() {
@@ -491,7 +497,7 @@ function openScannerIdModal() {
             document.getElementById("fId").disabled = true;
             document.getElementById("fNamaSingkat").value = scannedText.split("_")[1] || ""; // Ambil nama singkat dari QR jika ada
             document.getElementById("fNamaSingkat").disabled = true;
-            // Pemicu pengecekan otomatis apakah ID ini sudah ada rekap draft-nya di localstorage
+
             loadRecordToEdit(id);
             closeScannerIdModal();
         }

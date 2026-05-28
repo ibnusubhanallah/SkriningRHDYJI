@@ -1,4 +1,4 @@
-const CACHE_NAME = 'RHD-YJI-v27-05-2026-2200';
+const CACHE_NAME = 'RHD-YJI-v28-05-2026-1300';
 const ASSETS = [
     './',
     'img/draft flow skrining RHD - regist n antro.jpg',
@@ -10,6 +10,7 @@ const ASSETS = [
     'library/html5-qrcode.min.js',
     'library/JsBarcode.all.min.js',
     'library/recta.js',
+    'library/localforage.min.js',
     './entri.html',
     './entri.js',
     './extractor.html',

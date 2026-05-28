@@ -321,6 +321,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="form-group"
+                    style="margin-top: 15px; padding: 12px; background: #fff3cd; border: 1px solid #ffeeba; border-radius: 8px; text-align: left;">
+                    <label style="font-size: 13px; color: #856404;">📥 Impor Data Sasaran Peserta (Opsional - Format CSV
+                        Semikolon ';')</label>
+                    <input type="file" id="fImportCsv" accept=".csv" style="margin-top: 5px; font-size: 12px;">
+                    <div id="csvImportModeText" style="font-size: 11px; color: #666; margin-top: 2px;">Format Kolom CSV:
+                        NIK;Nama Lengkap;JK;Tanggal Lahir;Nama Ortu;No HP</div>
+                </div>
             </div>
             <button class="btn btn-primary" style="width: 100%;" onclick="initSession()">Buka Aplikasi Entri</button>
         </div>
@@ -362,10 +370,31 @@
 
                     <div id="subFormRegistrasi">
                         <h4>[Modul] Data Registrasi Pasien</h4>
-                        <div class="form-group">
-                            <label for="fNik">NIK Peserta (16 Digit, Angka Only)</label>
-                            <input type="text" id="fNik" maxlength="16" placeholder="Masukkan 16 digit NIK Peserta"
-                                oninput="this.value = this.value.replace(/\D/g, '')">
+                        <div id="searchPreRegWrapper"
+                            style="display: none; background: #e8f0fe; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #1a73e8;">
+                            <label style="color: #1a73e8; margin-bottom: 2px;">🔍 Pencarian Cepat Data Sasaran
+                                (Offline)</label>
+                            <p style="font-size: 11px; color: #555; margin: 0 0 8px 0;">Ketik Nama / NIK / Tanggal Lahir
+                                (dd-mm-yyyy). Gunakan spasi untuk filter ganda (Contoh: "05-12 Ahmad").</p>
+
+                            <input type="text" id="fSearchPreRegInput"
+                                placeholder="Mulai mengetik untuk mencari data anak..." oninput="handlePreRegSearch()">
+
+                            <div id="preRegResultsDropdown"
+                                style="display: none; background: white; border: 1px solid #ccc; border-radius: 6px; max-height: 200px; overflow-y: auto; margin-top: 5px; box-shadow: 0 4px 8px rgba(0,0,0,0.1);">
+                            </div>
+                        </div>
+                        <div class="grid-2">
+                            <div class="form-group">
+                                <label for="fNik">NIK Peserta (16 Digit, Angka Only)</label>
+                                <input type="text" id="fNik" maxlength="16" placeholder="Masukkan 16 digit NIK Peserta"
+                                    oninput="this.value = this.value.replace(/\D/g, '')">
+                            </div>
+                            <div class="form-group">
+                                <label for="fNisn">NISN (10 Digit, Angka Only)</label>
+                                <input type="text" id="fNisn" maxlength="10" placeholder="Masukkan 10 digit NISN Peserta"
+                                    oninput="this.value = this.value.replace(/\D/g, '')">
+                            </div>
                         </div>
                         <div class="grid-2">
                             <div class="form-group">
@@ -495,7 +524,8 @@
                             <button type="button" id="cancelBtn" class="btn" onclick="hideFormSection()">Batal / Hapus
                                 Draft</button>
                         </div>
-                        <button type="button" id="deleteBtn" class="btn btn-danger" onclick="confirmAndDeleteRecord()">Hapus Data</button>
+                        <button type="button" id="deleteBtn" class="btn btn-danger"
+                            onclick="confirmAndDeleteRecord()">Hapus Data</button>
                     </div>
                 </form>
             </div>

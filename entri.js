@@ -25,6 +25,7 @@ let listSekolah = {
 const recordLabel = {
     regis: {
         nik: ["NIK Peserta", "fNik"],
+        nisn: ["NISN Peserta", "fNisn"],
         namaLengkap: ["Nama Lengkap", "fNamaLengkap"],
         namaSekolah: ["Nama Sekolah", "fNamaSekolah"],
         jk: ["Jenis Kelamin", "fJk"],
@@ -172,6 +173,17 @@ function initSession() {
     }
 
     document.getElementById("daftar-sekolah").innerHTML = listSekolah[configSession.wilayah]?.map(school => `<option value="${school}"></option>`).join('') || '';
+
+    // Sisipkan di dalam initSession() sebelum showMainDashboard()
+    const csvFile = document.getElementById("fImportCsv").files[0];
+    if (csvFile) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const text = e.target.result;
+            prosesParsingDataCsv(text);
+        };
+        reader.readAsText(csvFile);
+    }
 
     showMainDashboard();
 }
@@ -395,7 +407,7 @@ function generateSequentialID() {
     } else {
         const vMap = { "Malang": 1, "Bekasi": 4, "Lampung": 7, "Minahasa Utara": 10 };
         const d1_2 = (vMap[configSession.wilayah] || 0) * 32 // jadikan digit ke2
-        + parseInt(configSession.kodeLokasi) // tambah kode lokasi
+            + parseInt(configSession.kodeLokasi) // tambah kode lokasi
         const d3 = configSession.modReg ? configSession.meja : "0";
         prefix = `${encodeCrockford32(d1_2)}${d3}`;
     }
@@ -404,7 +416,7 @@ function generateSequentialID() {
     masterRecords.forEach(rec => {
         if (rec.id && rec.id.startsWith(prefix)) {
             const lastDigit = modeID == "7 digit" ? parseInt(rec.id.substring(4, 7))
-            : decodeCrockford32(rec.id.substring(3, 5));
+                : decodeCrockford32(rec.id.substring(3, 5));
             if (lastDigit >= currentCounter) {
                 currentCounter = lastDigit + 1;
             }
@@ -436,6 +448,7 @@ function createAndReserveNewPatient() {
 
         // 5. Buka form dalam mode edit untuk ID draft tersebut
         isNewDraft = true;
+        checkPreRegVisibility();
         loadRecordToEdit(newId);
     } else {
         loadRecordToEdit(); // Mode input baru tanpa ID khusus jika modul Registrasi mati
@@ -853,14 +866,19 @@ function triggerRectaPrint(id) {
     const record = masterRecords.find(r => r.id === id);
     if (!record) return;
     let shownId = record.id;
+    const antrian = String.fromCharCode(64 + parseInt(shownId.substring(2, 3))) + decodeCrockford32(shownId.substring(3, 5)).toString().padStart(3, '0');
 
     printer.align('center')
-        .mode('A', true, true, true, false)
         .text('SCREENING RHD YJI 2026')
         .text('-----------------')
-        .text(shownId)
+        .mode('A', true, true, true, false)
+        .text("Antrian: " + antrian)
+        .mode('A', false, false, false, false)
+        .feed(1)
         .qrcode(16, shownId + "_" + record.namaSingkat)
         .feed(1)
+        .mode('A', true, true, true, false)
+        .text("ID: " + shownId)
         .text(record.namaSingkat)
         .mode('A', false, false, false, false)
         .feed(1)
@@ -955,4 +973,128 @@ function turnOffTorchIfActive() {
         idScannerInstance.applyVideoConstraints({ advanced: [{ torch: false }] }).catch(() => { });
         isTorchOn = false;
     }
+}
+
+// CSV!!!
+let preRegisteredDatabase = [];
+
+// Fungsi memotong baris teks CSV menjadi Array Objek
+function prosesParsingDataCsv(text) {
+    const lines = text.split("\n");
+    let parsedData = [];
+
+    // Looping dimulai dari indeks 1 untuk melewati Header baris pertama CSV
+    for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+
+        // Memisah kolom menggunakan pemisah semikolon (;)
+        const columns = line.split(";");
+        if (columns.length >= 4) {
+            parsedData.push({
+                nik: columns[0] ? columns[0].trim() : "",
+                namaLengkap: columns[1] ? columns[1].trim() : "",
+                jk: columns[2] ? columns[2].trim() : "",
+                ttl: columns[3] ? columns[3].trim() : "",
+                ortu: columns[4] ? columns[4].trim() : "-",
+                hp: columns[5] ? columns[5].trim() : "-"
+            });
+        }
+    }
+
+    if (parsedData.length > 0) {
+        safeLocalStorageSetItem("prereg_database", JSON.stringify(parsedData));
+        preRegisteredDatabase = parsedData;
+        console.log(`Successfully loaded ${parsedData.length} data target sasaran.`);
+    }
+}
+
+// Pemicu pengecekan apakah ada data sasaran saat form tambah data dibuka
+// (Panggil fungsi ini di dalam fungsi createAndReserveNewPatient() Dokter)
+function checkPreRegVisibility() {
+    if (preRegisteredDatabase.length === 0) {
+        preRegisteredDatabase = safeLocalStorageParse("prereg_database");
+    }
+
+    // Tampilkan kotak pencarian jika database CSV tidak kosong
+    const wrapper = document.getElementById("searchPreRegWrapper");
+    if (wrapper) {
+        wrapper.style.display = preRegisteredDatabase.length > 0 ? "block" : "none";
+    }
+}
+
+// --- LOGIKA PENCERIAN PINTAR MULTI-ELEMEN ---
+function handlePreRegSearch() {
+    const query = document.getElementById("fSearchPreRegInput").value.toLowerCase().trim();
+    const dropdown = document.getElementById("preRegResultsDropdown");
+
+    if (!query || query.length < 2) {
+        dropdown.style.display = "none";
+        return;
+    }
+
+    // Pecah keyword pencarian berdasarkan spasi untuk mendukung filter ganda
+    // Misal: keyword "15-08" dan "Ahmad" harus ada semua dalam satu baris data
+    const keywords = query.split(" ");
+
+    // Saring database berdasarkan seluruh keyword yang diinput
+    const filtered = preRegisteredDatabase.filter(anak => {
+        const gabunganTeksData = `${anak.nik} ${anak.namaLengkap.toLowerCase()} ${anak.ttl}`;
+        return keywords.every(kw => gabunganTeksData.includes(kw));
+    });
+
+    // Render hasil saringan ke dalam dropdown ui
+    dropdown.innerHTML = "";
+    if (filtered.length === 0) {
+        dropdown.innerHTML = `<div style="padding: 10px; color: #999; font-size: 13px; text-align: center;">Data anak tidak ditemukan dalam target sasaran...</div>`;
+    } else {
+        // Batasi maksimal menampilkan 10 hasil teratas agar performa tetap enteng
+        filtered.slice(0, 10).forEach(anak => {
+            const div = document.createElement("div");
+            div.style.padding = "10px 12px";
+            div.style.borderBottom = "1px solid #eee";
+            div.style.cursor = "pointer";
+            div.style.fontSize = "13px";
+            div.style.textAlign = "left";
+            div.innerHTML = `<strong>${anak.namaLengkap}</strong> (${anak.jk === "Laki-laki" ? 'L' : 'P'}) <br> <small style="color:#666;">NIK: ${anak.nik || '-'} | TTL: ${anak.ttl}</small>`;
+
+            // Aksi saat item hasil pencarian diklik: Autofill langsung mengisi form!
+            div.onclick = function () {
+                autofillFormFromPreReg(anak);
+                dropdown.style.display = "none";
+                document.getElementById("fSearchPreRegInput").value = "";
+            };
+            dropdown.appendChild(div);
+        });
+    }
+    dropdown.style.display = "block";
+}
+
+// --- FUNGSIONALITAS AUTOFILL DATA KE FORM ---
+function autofillFormFromPreReg(anak) {
+    // 1. Ekstrak nama singkat (Maksimal 6 huruf pertama sebagai konfirmatori sesuai rules Dokter)
+    const namaSingkatOtomatis = anak.namaLengkap.split(" ")[0].substring(0, 6).toUpperCase();
+
+    document.getElementById("fNamaSingkat").value = namaSingkatOtomatis;
+    document.getElementById("fNik").value = anak.nik;
+    document.getElementById("fNamaLengkap").value = anak.namaLengkap;
+    document.getElementById("fOrtu").value = anak.ortu;
+    document.getElementById("fHp").value = anak.hp;
+    document.getElementById("fTtl").value = anak.ttl;
+    document.getElementById("fJk").value = anak.jk;
+
+    // Jika data dari CSV memiliki NIK lengkap, jalankan fungsi penguncian otomatis Dokter
+    if (anak.nik && anak.nik.length === 16) {
+        document.getElementById("fJk").disabled = true;
+        document.getElementById("fTtl").disabled = true;
+        if (typeof document.getElementById("noteJk") !== 'undefined') {
+            document.getElementById("noteJk").innerText = "Terisi otomatis dari database sasaran.";
+            document.getElementById("noteTtl").innerText = "Terisi otomatis dari database sasaran.";
+        }
+    } else {
+        document.getElementById("fJk").disabled = false;
+        document.getElementById("fTtl").disabled = false;
+    }
+
+    alert(`⚡ Autofill Berhasil: Data ${anak.namaLengkap} berhasil dimuat ke form!`);
 }

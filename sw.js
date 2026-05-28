@@ -1,4 +1,4 @@
-const CACHE_NAME = 'RHD-YJI-v28-05-2026-2200';
+const CACHE_NAME = 'RHD-YJI-v28-05-2026-2230';
 const ASSETS = [
     './',
     'img/draft flow skrining RHD - regist n antro.jpg',
@@ -54,15 +54,22 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
     e.waitUntil(
-        // caches.keys().then(keys => {
-        //     Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
-        // })
-        // Paksa Service Worker baru untuk langsung mengambil kendali halaman saat ini
-        self.clients.claim().then(() => {
-            console.log('🚀 Service Worker aktif dan mengambil kendali halaman!');
+        // 1. Ambil semua nama cache yang ada di browser saat ini
+        caches.keys().then(keys => {
+            // 2. Hapus semua cache lama yang namanya TIDAK SAMA dengan CACHE_NAME baru saat ini
+            return Promise.all(
+                keys.filter(k => k !== CACHE_NAME).map(k => {
+                    console.log('🗑️ Menghapus cache versi usang:', k);
+                    return caches.delete(k);
+                })
+            );
+        }).then(() => {
+            // 3. Setelah bersih-bersih, langsung paksa klaim kendali halaman
+            return self.clients.claim();
+        }).then(() => {
+            console.log('🚀 Service Worker baru sukses diaktifkan dan siap offline murni!');
         })
     );
-
 });
 
 self.addEventListener('fetch', e => {

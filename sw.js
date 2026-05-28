@@ -1,4 +1,4 @@
-const CACHE_NAME = 'RHD-YJI-v28-05-2026-1400';
+const CACHE_NAME = 'RHD-YJI-v28-05-2026-2200';
 const ASSETS = [
     './',
     'img/draft flow skrining RHD - regist n antro.jpg',

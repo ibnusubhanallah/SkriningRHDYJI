@@ -12,11 +12,6 @@ let currentEditId = null;
 let isNewDraft = false;
 const modeID = "5 digit"; // Default mode ID, bisa diubah ke "5 digit" jika ingin pakai format ID pendek internal
 let listSekolah = {
-    "Malang": [
-        "SD 1 Malang",
-        "SD 2 Malang"
-    ],
-    "Bekasi": []
 }
 
 /** 
@@ -132,8 +127,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("fNamaSingkat").setAttribute("maxlength", modeID === "7 digit" ? "6" : "8");
 
 
-    const savedRectak = await localforage.getItem("RECTA_KEY");
-    const savedPort = await localforage.getItem("RECTA_PORT");
+    const savedRectak = localStorage.getItem("RECTA_KEY");
+    const savedPort = localStorage.getItem("RECTA_PORT");
     if (savedRectak && savedPort && configSession.modReg) {
         printer = new Recta(savedRectak, savedPort);
         printer.open().catch(() => {
@@ -171,9 +166,9 @@ async function initSession() {
     configSession = { wilayah, kodeLokasi, modReg, modAntro, meja };
     if (!await localforage.setItem("entri_config", configSession)) return;
     console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
-    await localforage.setItem("RECTA_KEY", appkey);
+    localStorage.setItem("RECTA_KEY", appkey);
     console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
-    await localforage.setItem("RECTA_PORT", appport);
+    localStorage.setItem("RECTA_PORT", appport);
 
     console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
     if (!await localforage.getItem("entri_records")) {
@@ -220,7 +215,7 @@ function showMainDashboard() {
     document.getElementById("subFormAntropometri").style.display = configSession.modAntro ? "block" : "none";
 
     // Tampilkan tombol printer hanya jika meja Registrasi aktif
-    document.getElementById("btnSettingPrinter").style.display = configSession.modReg ? "inline-block" : "none";
+    document.getElementById("btnMainSetting").style.display = configSession.modReg ? "inline-block" : "none";
 
     // Nama Singkat Wajib Terisi di segala kondisi modul (Konfirmatori)
     document.getElementById("fNamaSingkat").required = true;
@@ -828,6 +823,7 @@ async function executeResetLokalSempurna(t) {
     if (confirm(t)) {
         await localforage.removeItem("entri_config");
         await localforage.removeItem("entri_records");
+        await localforage.removeItem("prereg_database");
         location.reload();
     }
 }
@@ -846,12 +842,36 @@ function openAkhiriSesiModal() {
     document.getElementById("modalAkhiriSesi").style.display = "flex";
 }
 
-async function openPrinterModal() {
-    document.getElementById("pRectaKey").value = await localforage.getItem("RECTA_KEY") || "";
-    document.getElementById("pRectaPort").value = await localforage.getItem("RECTA_PORT") || "1811";
+// async function openPrinterModal() {
+//     document.getElementById("pRectaKey").value = await localforage.getItem("RECTA_KEY") || "";
+//     document.getElementById("pRectaPort").value = await localforage.getItem("RECTA_PORT") || "1811";
+//     document.getElementById("printerStatusText").innerText = printer ? "🟢 Printer Terhubung" : "⚪ Printer Belum Terhubung";
+//     document.getElementById("printerStatusText").style.color = printer ? "#28a745" : "#555";
+//     document.getElementById("modalPrinter").style.display = "flex";
+// }
+
+// Fungsi untuk membuka modal utama setting
+async function openMainSettingModal() {
+    // 1. Muat data konfigurasi printer recta lama (seperti kemarin)
+    document.getElementById("pRectaKey").value = localStorage.getItem("RECTA_KEY") || "";
+    document.getElementById("pRectaPort").value = localStorage.getItem("RECTA_PORT") || "1811";
     document.getElementById("printerStatusText").innerText = printer ? "🟢 Printer Terhubung" : "⚪ Printer Belum Terhubung";
     document.getElementById("printerStatusText").style.color = printer ? "#28a745" : "#555";
-    document.getElementById("modalPrinter").style.display = "flex";
+
+    // 2. Hitung jumlah database CSV sasaran yang aktif tersimpan di IndexedDB saat ini
+    const currentPreReg = await localforage.getItem("prereg_database");
+    const statusTxt = document.getElementById("txtCurrentCsvStatus");
+
+    if (currentPreReg && currentPreReg.length > 0) {
+        statusTxt.innerText = `📊 Status: Terpasang ${currentPreReg.length} data anak sasaran.`;
+        statusTxt.style.color = "#28a745";
+    } else {
+        statusTxt.innerText = "⚪ Status: Belum ada database sasaran aktif.";
+        statusTxt.style.color = "#dc3545";
+    }
+
+    // 3. Tampilkan Modal
+    document.getElementById("modalMainSetting").style.display = "flex";
 }
 
 function closeModal(id) {
@@ -869,9 +889,9 @@ function connectPrinter() {
     // Inisialisasi Recta berbasis input user
     printer = new Recta(key, port);
 
-    printer.open().then(async () => {
-        await localforage.setItem("RECTA_KEY", key);
-        await localforage.setItem("RECTA_PORT", port);
+    printer.open().then(() => {
+        localStorage.setItem("RECTA_KEY", key);
+        localStorage.setItem("RECTA_PORT", port);
         statusText.innerText = "🟢 Printer Berhasil Terhubung!";
         statusText.style.color = "#28a745";
         setTimeout(() => closeModal('modalPrinter'), 1200);
@@ -1128,4 +1148,62 @@ function autofillFormFromPreReg(anak) {
     }
 
     // alert(`⚡ Autofill Berhasil: Data ${anak.namaLengkap} berhasil dimuat ke form!`);
+}
+
+// Fungsi memproses update CSV dari dalam modal setting dashboard utama
+function executeCsvUpdateFromDashboard() {
+    const csvFile = document.getElementById("fUpdateCsv").files[0];
+    if (!csvFile) {
+        alert("⚠️ Mohon pilih file CSV baru terlebih dahulu!");
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = async function(e) {
+        const text = e.target.result;
+        
+        // Memanfaatkan fungsi parser CSV semikolon milik Dokter yang kemarin
+        const lines = text.split("\n");
+        let parsedData = [];
+        
+        for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const columns = line.split(";");
+            if (columns.length >= 4) {
+                parsedData.push({
+                    nik: columns[0] ? columns[0].trim() : "",
+                    namaLengkap: columns[1] ? columns[1].trim() : "",
+                    jk: columns[2] ? columns[2].trim() : "",
+                    ttl: columns[3] ? columns[3].trim() : "",
+                    ortu: columns[4] ? columns[4].trim() : "-",
+                    hp: columns[5] ? columns[5].trim() : "-"
+                });
+            }
+        }
+        
+        if (parsedData.length > 0) {
+            // Amankan data baru langsung ke IndexedDB tanpa limit 5MB!
+            await localforage.setItem("prereg_database", parsedData);
+            preRegisteredDatabase = parsedData; // Sinkronkan ke variabel memori aktif
+            
+            // Perbarui teks status di modal secara real-time
+            const statusTxt = document.getElementById("txtCurrentCsvStatus");
+            statusTxt.innerText = `🎉 Sukses! Berhasil memperbarui ${parsedData.length} data sasaran.`;
+            statusTxt.style.color = "#28a745";
+            
+            // Reset input file agar bersih kembali
+            document.getElementById("fUpdateCsv").value = "";
+            
+            // Pemicu pengecekan ulang visibilitas kotak pencarian di form registrasi
+            checkPreRegVisibility();
+            
+            // alert(`⚡ Database Sasaran Berhasil Diperbarui!\nSebanyak ${parsedData.length} data anak siap dicari secara offline.`);
+        } else {
+            alert("❌ Gagal memproses file. Pastikan format kolom sesuai instruksi dan menggunakan pemisah semikolon ';'");
+        }
+    };
+    
+    reader.readAsText(csvFile);
 }

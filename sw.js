@@ -54,13 +54,15 @@ self.addEventListener('install', e => {
 
 self.addEventListener('activate', e => {
     e.waitUntil(
-        caches.keys().then(keys => Promise.all(
-            keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
-        ))
+        // caches.keys().then(keys => {
+        //     Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)));
+        // })
+        // Paksa Service Worker baru untuk langsung mengambil kendali halaman saat ini
+        self.clients.claim().then(() => {
+            console.log('🚀 Service Worker aktif dan mengambil kendali halaman!');
+        })
     );
 
-    // Paksa Service Worker baru untuk langsung mengambil kendali halaman saat ini
-    self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {

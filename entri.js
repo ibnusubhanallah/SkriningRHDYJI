@@ -472,6 +472,7 @@ async function loadRecordToEdit(id = null) {
     function copyNSkeSearch() {
         document.getElementById("fSearchPreRegInput").value = this.value;
         handlePreRegSearch();
+        renderPreRegTableAbsen();
     }
 
     document.getElementById("fNamaSingkat").addEventListener("input", copyNSkeSearch);
@@ -494,7 +495,7 @@ async function loadRecordToEdit(id = null) {
             document.getElementById("formSection").style.display = "block";
 
             document.getElementById("fId").value = shownId;
-            document.getElementById("fNamaSingkat").focus();
+            document.getElementById("fSearchPreRegInput").focus();
         }
     } else {
         // if (!record) { //??
@@ -663,6 +664,14 @@ function kosongkanFormInput() {
     for (const [key, [label, fieldId]] of Object.entries(recordLabel.antro)) {
         document.getElementById(fieldId).value = "";
     }
+    document.getElementById("fDemam").value = "";
+    document.getElementById("fDemamNote").value = "";
+    document.getElementById("fTenggorokan").value = "";
+    document.getElementById("fTenggorokanNote").value = "";
+    document.getElementById("fObat").value = "";
+    document.getElementById("fObatNote").value = "";
+    document.getElementById("fRs").value = "";
+    document.getElementById("fRsNote").value = "";
 }
 
 // --- TABEL DYNAMIC DISPLAY ---
@@ -1043,7 +1052,8 @@ async function prosesParsingDataCsv(text) {
                 ortu: columns[6] ? columns[6].trim() : "-",
                 pekerjaanOrtu: columns[7] ? columns[7].trim() : "-",
                 nikOrtu: columns[8] ? columns[8].trim() : "-",
-                hp: columns[9] ? columns[9].trim() : "-"
+                hp: columns[9] ? columns[9].trim() : "-",
+                kelas: columns[10] ? columns[10].trim() : "-"
             });
         }
     }
@@ -1059,14 +1069,55 @@ async function prosesParsingDataCsv(text) {
 // (Panggil fungsi ini di dalam fungsi createAndReserveNewPatient() Dokter)
 async function checkPreRegVisibility() {
     if (preRegisteredDatabase.length === 0) {
-        preRegisteredDatabase = await localforage.getItem("prereg_database");
+        const savedData = await localforage.getItem("prereg_database");
+        preRegisteredDatabase = savedData ? savedData : [];
     }
 
     // Tampilkan kotak pencarian jika database CSV tidak kosong
     const wrapper = document.getElementById("searchPreRegWrapper");
     if (wrapper) {
-        wrapper.style.display = preRegisteredDatabase.length > 0 ? "block" : "none";
+        if (preRegisteredDatabase.length > 0) {
+            wrapper.style.display = "block";
+            populateFilterDropdowns();
+        } else {
+            wrapper.style.display = "none";
+        }
     }
+}
+
+function populateFilterDropdowns() {
+    const selectSekolah = document.getElementById("fFilterPreRegSekolah");
+    if (!selectSekolah) return;
+
+    // Ambil daftar nama sekolah unik
+    const daftarSekolah = [...new Set(preRegisteredDatabase.map(item => item.namaSekolah))];
+
+    selectSekolah.innerHTML = '<option value="">-- Pilih Sekolah / Lokasi --</option>';
+    daftarSekolah.forEach(sek => {
+        const opt = document.createElement("option");
+        opt.value = sek; opt.text = sek;
+        selectSekolah.appendChild(opt);
+    });
+}
+
+function handleSekolahChange() {
+    const sekolahTerpilih = document.getElementById("fFilterPreRegSekolah").value;
+    const selectKelas = document.getElementById("fFilterPreRegKelas");
+
+    selectKelas.innerHTML = '<option value="">-- Pilih Kelas --</option>';
+    if (!sekolahTerpilih) return;
+
+    // Filter anak di sekolah tersebut, lalu ambil daftar kelas uniknya
+    const dataSekolah = preRegisteredDatabase.filter(item => item.namaSekolah === sekolahTerpilih);
+    const daftarKelas = [...new Set(dataSekolah.map(item => item.kelas))].sort();
+
+    daftarKelas.forEach(kls => {
+        const opt = document.createElement("option");
+        opt.value = kls; opt.text = "Kelas " + kls;
+        selectKelas.appendChild(opt);
+    });
+
+    renderPreRegTableAbsen(); // Refresh tabel
 }
 
 // --- LOGIKA PENCERIAN PINTAR MULTI-ELEMEN ---
@@ -1116,14 +1167,81 @@ async function handlePreRegSearch() {
     dropdown.style.display = "block";
 }
 
+function renderPreRegTableAbsen() {
+    const sekolah = document.getElementById("fFilterPreRegSekolah").value;
+    const kelas = document.getElementById("fFilterPreRegKelas").value;
+    const searchTxt = document.getElementById("fSearchPreRegInput").value.toLowerCase().trim();
+    const tbody = document.getElementById("preRegTableBodyAbsen");
+
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    // 1. Lakukan filtrasi bertingkat
+    let filtered = preRegisteredDatabase;
+
+    if (sekolah) {
+        filtered = filtered.filter(item => item.namaSekolah === sekolah);
+    }
+    if (kelas) {
+        filtered = filtered.filter(item => item.kelas === kelas);
+    }
+    if (searchTxt) {
+        filtered = filtered.filter(item =>
+            item.namaLengkap.toLowerCase().includes(searchTxt) ||
+            item.nik.includes(searchTxt)
+        );
+    }
+
+    // 2. Jika filter masih kosong total, beri petunjuk di tabel
+    if (!sekolah && !kelas && !searchTxt) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #999; font-style: italic;">Silakan gunakan filter dropdown di atas untuk memuat daftar absen...</td></tr>`;
+        return;
+    }
+
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #999; font-style: italic;">Data anak tidak ditemukan...</td></tr>`;
+        return;
+    }
+
+    // 3. Urutkan data secara Ascending berdasarkan nomor urut absen asli CSV
+    filtered.sort((a, b) => a.noAbsen - b.noAbsen);
+
+    // 4. Suntik data baris anak ke dalam tabel interaktif
+    let counter = 1;
+    filtered.forEach(anak => {
+        const tr = document.createElement("tr");
+        tr.style.borderBottom = "1px solid #eee";
+
+        const jkSimbol = anak.jk === "Laki-laki" ? "L" : "P";
+
+        tr.innerHTML = `
+            <td style="padding: 8px; text-align: center; color: #666; min-width: 0px; width: 0px;">${counter}</td>
+            <td style="padding: 8px; left: auto; min-width: 100px;"><strong>${anak.namaLengkap}</strong></td>
+            <td style="padding: 8px; left: auto; min-width: 10px; width: 10px; text-align: center;">${jkSimbol}</td>
+            <td style="padding: 8px; color: #444;">${anak.ttl}</td>
+            <td style="padding: 8px; text-align: center;">
+                <button type="button" onclick='executePreRegAutofillDirect(${JSON.stringify(anak)})' style="background: #28a745; color: white; border: none; padding: 4px 8px; border-radius: 4px; font-weight: bold; font-size: 11px; cursor: pointer;">Pilih</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+        counter++;
+    });
+}
+
+// Jembatan fungsi perantara untuk menangani autofill aman string objek JSON
+function executePreRegAutofillDirect(anakObat) {
+    autofillFormFromPreReg(anakObat);
+    // Setelah sukses dipilih, kosongkan search input manual agar tabel ter-reset bersih
+    document.getElementById("fSearchPreRegInput").value = "";
+    renderPreRegTableAbsen();
+}
+
 // --- FUNGSIONALITAS AUTOFILL DATA KE FORM ---
 function autofillFormFromPreReg(anak) {
     // 1. Ekstrak nama singkat (Maksimal 6 huruf pertama sebagai konfirmatori sesuai rules Dokter)
     const namaSingkatOtomatis = anak.namaLengkap.split(" ")[0].substring(0, 6).toUpperCase();
 
-    if (document.getElementById("fNamaSingkat").value === "") {
-        document.getElementById("fNamaSingkat").value = namaSingkatOtomatis;
-    }
+    document.getElementById("fNamaSingkat").value = namaSingkatOtomatis;
     document.getElementById("fNik").value = anak.nik;
     document.getElementById("fNisn").value = anak.nisn;
     document.getElementById("fNamaLengkap").value = anak.namaLengkap;
@@ -1160,51 +1278,56 @@ function executeCsvUpdateFromDashboard() {
     }
 
     const reader = new FileReader();
-    reader.onload = async function(e) {
+    reader.onload = async function (e) {
         const text = e.target.result;
-        
+
         // Memanfaatkan fungsi parser CSV semikolon milik Dokter yang kemarin
         const lines = text.split("\n");
         let parsedData = [];
-        
+
         for (let i = 1; i < lines.length; i++) {
             const line = lines[i].trim();
             if (!line) continue;
-            
+
             const columns = line.split(";");
             if (columns.length >= 4) {
                 parsedData.push({
                     nik: columns[0] ? columns[0].trim() : "",
-                    namaLengkap: columns[1] ? columns[1].trim() : "",
-                    jk: columns[2] ? columns[2].trim() : "",
-                    ttl: columns[3] ? columns[3].trim() : "",
-                    ortu: columns[4] ? columns[4].trim() : "-",
-                    hp: columns[5] ? columns[5].trim() : "-"
+                    nisn: columns[1] ? columns[1].trim() : "",
+                    namaLengkap: columns[2] ? columns[2].trim() : "",
+                    namaSekolah: columns[3] ? columns[3].trim() : "",
+                    jk: columns[4] ? columns[4].trim() : "",
+                    ttl: columns[5] ? columns[5].trim() : "",
+                    ortu: columns[6] ? columns[6].trim() : "-",
+                    pekerjaanOrtu: columns[7] ? columns[7].trim() : "-",
+                    nikOrtu: columns[8] ? columns[8].trim() : "-",
+                    hp: columns[9] ? columns[9].trim() : "-",
+                    kelas: columns[10] ? columns[10].trim() : "-"
                 });
             }
         }
-        
+
         if (parsedData.length > 0) {
             // Amankan data baru langsung ke IndexedDB tanpa limit 5MB!
             await localforage.setItem("prereg_database", parsedData);
             preRegisteredDatabase = parsedData; // Sinkronkan ke variabel memori aktif
-            
+
             // Perbarui teks status di modal secara real-time
             const statusTxt = document.getElementById("txtCurrentCsvStatus");
             statusTxt.innerText = `🎉 Sukses! Berhasil memperbarui ${parsedData.length} data sasaran.`;
             statusTxt.style.color = "#28a745";
-            
+
             // Reset input file agar bersih kembali
             document.getElementById("fUpdateCsv").value = "";
-            
+
             // Pemicu pengecekan ulang visibilitas kotak pencarian di form registrasi
             checkPreRegVisibility();
-            
+
             // alert(`⚡ Database Sasaran Berhasil Diperbarui!\nSebanyak ${parsedData.length} data anak siap dicari secara offline.`);
         } else {
             alert("❌ Gagal memproses file. Pastikan format kolom sesuai instruksi dan menggunakan pemisah semikolon ';'");
         }
     };
-    
+
     reader.readAsText(csvFile);
 }

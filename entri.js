@@ -1127,6 +1127,7 @@ function autofillFormFromPreReg(anak) {
     document.getElementById("fNik").value = anak.nik;
     document.getElementById("fNisn").value = anak.nisn;
     document.getElementById("fNamaLengkap").value = anak.namaLengkap;
+    document.getElementById("fNamaSekolah").value = anak.namaSekolah;
     document.getElementById("fTtl").value = anak.ttl;
     document.getElementById("fJk").value = anak.jk;
     document.getElementById("fOrtu").value = anak.ortu;

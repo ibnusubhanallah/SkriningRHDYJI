@@ -237,6 +237,10 @@ async function handleFormSubmit(e) {
     masterRecords = savedRecords ? savedRecords : [];
 
     const idValue = document.getElementById("fId").value;
+    const existingRecord = masterRecords.find(r => r.id === idValue);
+    if (existingRecord){
+        if (!confirm(`ID ${idValue} sudah ada di data. Overwrite data lama?`)) return;
+    }
 
     const record = {
         id: idValue,
@@ -298,8 +302,8 @@ async function handleFormSubmit(e) {
     } else {
         masterRecords.unshift(record);
     }
-    console.log(index);
-    console.log(masterRecords);
+    // console.log(index);
+    // console.log(masterRecords);
 
     await localforage.setItem("doctor_records", masterRecords);
     currentEditId = null;

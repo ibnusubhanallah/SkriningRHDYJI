@@ -45,30 +45,6 @@ const recordLabel = {
     }
 }
 
-// function safeLocalStorageSetItem(key, value) {
-//     try {
-//         localStorage.setItem(key, value);
-//         return true;
-//     } catch (error) {
-//         if (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
-//             alert("💾 Peringatan: Memori penyimpanan perangkat penuh!\n\nHapus data lama atau upload ke cloud untuk membebaskan ruang.");
-//         } else {
-//             alert("🚨 Gagal menyimpan data: " + error.message);
-//         }
-//         return false;
-//     }
-// }
-
-// function safeLocalStorageParse(key, defaultValue = []) {
-//     try {
-//         const data = localStorage.getItem(key);
-//         return data ? JSON.parse(data) : defaultValue;
-//     } catch (error) {
-//         console.error("Error parsing localStorage", error);
-//         return defaultValue;
-//     }
-// }
-
 document.addEventListener("DOMContentLoaded", async () => {
     const savedConfig = await localforage.getItem("entri_config");
     const savedRecords = await localforage.getItem("entri_records");
@@ -137,7 +113,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// --- LOGIKA GATEWAY ---
 function toggleMejaField() {
     const isRegChecked = document.getElementById("modReg").checked;
     document.getElementById("mejaFieldWrapper").style.display = isRegChecked ? "block" : "none";
@@ -148,7 +123,29 @@ function togglePrinterField() {
     document.getElementById("printerFieldWrapper").style.display = isPrinterChecked ? "block" : "none";
 }
 
-async function initSession() {
+function initSession() {
+    const wilayah = document.getElementById("gwWilayah").value;
+    const kodeLokasi = document.getElementById("gwKodeLokasi").value.trim();
+    const modReg = document.getElementById("modReg").checked;
+    const modAntro = document.getElementById("modAntro").checked;
+    const meja = document.getElementById("gwMeja").value.trim();
+
+    if (!wilayah) return alert("Pilih Wilayah terlebih dahulu!");
+    if (parseInt(kodeLokasi) > 95 || parseInt(kodeLokasi) < 1) return alert("Kode lokasi harus antara 1-95!");
+    if (parseInt(meja) < 1 || parseInt(meja) > 31) return alert("Nomor meja harus antara 1-31!");
+    if (!modReg && !modAntro) return alert("Pilih minimal satu modul!");
+    if (modReg && (!meja || parseInt(meja) < 1)) return alert("Isi nomor Meja Registrasi!");
+
+    // Suntik data ke dalam kotak teks pengingat modal konfirmasi
+    document.getElementById("confGwWilayah").innerText = wilayah;
+    document.getElementById("confGwLokasi").innerText = kodeLokasi;
+    document.getElementById("confGwMeja").innerText = modReg ? `MEJA ${meja}` : "Abaikan (Hanya Antropometri)";
+
+    // Buka Modal Konfirmasi Gede
+    document.getElementById("modalKonfirmasiGateway").style.display = "flex";
+}
+
+async function executeFinalInitSession() {
     const wilayah = document.getElementById("gwWilayah").value;
     const kodeLokasi = document.getElementById("gwKodeLokasi").value.trim();
     const modReg = document.getElementById("modReg").checked;
@@ -157,26 +154,16 @@ async function initSession() {
     const appkey = document.getElementById("gwAppKey").value.trim() || "";
     const appport = document.getElementById("gwAppPort").value.trim();
 
-    if (!wilayah) return alert("Pilih Wilayah terlebih dahulu!");
-    if (parseInt(kodeLokasi) > 95 || parseInt(kodeLokasi) < 1) return alert("Kode lokasi harus antara 1-95!");
-    if (parseInt(meja) < 1 || parseInt(meja) > 9) return alert("Nomor meja harus antara 1-9!");
-    if (!modReg && !modAntro) return alert("Pilih minimal satu modul!");
-    if (modReg && (!meja || parseInt(meja) < 1)) return alert("Isi nomor Meja Registrasi!");
+    document.getElementById("modalKonfirmasiGateway").style.display = "none";
 
     configSession = { wilayah, kodeLokasi, modReg, modAntro, meja };
     if (!await localforage.setItem("entri_config", configSession)) return;
-    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
     localStorage.setItem("RECTA_KEY", appkey);
-    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
     localStorage.setItem("RECTA_PORT", appport);
-
-    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
     if (!await localforage.getItem("entri_records")) {
         await localforage.setItem("entri_records", []);
         masterRecords = [];
     }
-
-    console.log("Konfigurasi sesi berhasil disimpan ke localforage:", configSession);
 
     document.getElementById("daftar-sekolah").innerHTML = listSekolah[configSession.wilayah]?.map(school => `<option value="${school}"></option>`).join('') || '';
 

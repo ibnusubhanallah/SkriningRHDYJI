@@ -293,7 +293,8 @@
             </div>
             <div class="form-group">
                 <label for="gwKodeLokasi">Kode Lokasi Skrining *</label>
-                <input type="number" id="gwKodeLokasi" placeholder="Contoh: 1" min="1" max="95">
+                <input type="text" id="gwKodeLokasi" maxlength="2" inputmode="numeric"
+                    oninput="this.value = this.value.replace(/\D/g, '')" placeholder="Isi dengan angka antara 1-95">
             </div>
             <div class="form-group">
                 <label>Modul Input Data:</label>
@@ -305,7 +306,8 @@
             <div id="mejaFieldWrapper">
                 <div class="form-group">
                     <label for="gwMeja">Meja Registrasi Ke- *</label>
-                    <input type="number" id="gwMeja" min="1" max="9" placeholder="Contoh: 1">
+                    <input type="text" id="gwMeja" maxlength="2" inputmode="numeric"
+                        oninput="this.value = this.value.replace(/\D/g, '')" placeholder="Isi dengan angka 1-31. Pastikan angka BERBEDA!">
                 </div>
                 <div class="form-group">
                     <label><input type="checkbox" id="usePrinter" onchange="togglePrinterField()"> Terhubung ke Printer
@@ -410,7 +412,9 @@
                                             <th
                                                 style="padding: 6px 8px; border-bottom: 1px solid #ccc; min-width: 0px; width: 0px; text-align: center;">
                                                 No</th>
-                                            <th style="padding: 6px 8px; border-bottom: 1px solid #ccc; left: auto; min-width: 100px;">Nama Lengkap
+                                            <th
+                                                style="padding: 6px 8px; border-bottom: 1px solid #ccc; left: auto; min-width: 100px;">
+                                                Nama Lengkap
                                             </th>
                                             <th
                                                 style="padding: 6px 8px; border-bottom: 1px solid #ccc; left: auto; min-width: 10px; width: 10px ;text-align: center;">
@@ -748,6 +752,43 @@
             </div>
             <button class="btn" onclick="closeScannerIdModal()"
                 style="width: 100%; margin-top: 15px; background: #bbb; color: black;">Tutup</button>
+        </div>
+    </div>
+
+    <div id="modalKonfirmasiGateway"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center;">
+        <div class="modal"
+            style="background: white; padding: 30px; border-radius: 12px; text-align: center; max-width: 450px; width: 85%; border-top: 6px solid #ffc107;">
+            <div style="font-size: 40px; margin-bottom: 5px;">⚠️</div>
+            <h3 style="margin: 0 0 15px 0; color: #333;">Verifikasi Sesi Kerja</h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">Mohon periksa kembali. Kesalahan pengisian
+                kode lokasi atau meja akan merusak urutan ID unik pasien di cloud!</p>
+
+            <div
+                style="background: #fff8e1; border: 1px solid #ffe082; padding: 15px; border-radius: 8px; text-align: left; margin-bottom: 25px; font-size: 14px; line-height: 1.8;">
+                <div style="border-bottom: 1px dashed #ffd54f; padding-bottom: 5px; margin-bottom: 5px;">
+                    📍 <strong>Wilayah:</strong> <span id="confGwWilayah"
+                        style="float: right; font-weight: bold; color: #c82333;">-</span>
+                </div>
+                <div style="border-bottom: 1px dashed #ffd54f; padding-bottom: 5px; margin-bottom: 5px;">
+                    🏫 <strong>Kode Lokasi:</strong> <span id="confGwLokasi"
+                        style="float: right; font-weight: bold; font-size: 16px; color: #0056b3;">-</span>
+                </div>
+                <div>
+                    🪑 <strong>Meja Registrasi:</strong> <span id="confGwMeja"
+                        style="float: right; font-weight: bold; font-size: 16px; color: #0056b3;">-</span>
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" class="btn" onclick="executeFinalInitSession()"
+                    style="flex: 1; background: #28a745; color: white; font-weight: bold; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">✅
+                    Ya, Sudah Benar</button>
+                <button type="button" class="btn"
+                    onclick="document.getElementById('modalKonfirmasiGateway').style.display='none'"
+                    style="flex: 1; background: #bbb; color: black; padding: 12px; border: none; border-radius: 6px; cursor: pointer;">Koreksi
+                    Lagi</button>
+            </div>
         </div>
     </div>
 

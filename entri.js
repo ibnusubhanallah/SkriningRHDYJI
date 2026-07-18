@@ -1027,7 +1027,7 @@ async function prosesParsingDataCsv(text) {
         if (!line) continue;
 
         // Memisah kolom menggunakan pemisah semikolon (;)
-        const columns = line.split(";");
+        const columns = line.split(",");
         if (columns.length >= 4) {
             parsedData.push({
                 nik: columns[0] ? columns[0].trim() : "",
@@ -1276,7 +1276,7 @@ function executeCsvUpdateFromDashboard() {
             const line = lines[i].trim();
             if (!line) continue;
 
-            const columns = line.split(";");
+            const columns = line.split(",");
             if (columns.length >= 4) {
                 parsedData.push({
                     nik: columns[0] ? columns[0].trim() : "",

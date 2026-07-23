@@ -1040,7 +1040,9 @@ async function prosesParsingDataCsv(text) {
                 pekerjaanOrtu: columns[7] ? columns[7].trim() : "-",
                 nikOrtu: columns[8] ? columns[8].trim() : "-",
                 hp: columns[9] ? columns[9].trim() : "-",
-                kelas: columns[10] ? columns[10].trim() : "-"
+                kelas: columns[10] ? columns[10].trim() : "-",
+                bb: columns[11] ? columns[11].trim() : "-",
+                tb: columns[12] ? columns[12].trim() : "-"
             });
         }
     }
@@ -1239,6 +1241,8 @@ function autofillFormFromPreReg(anak) {
     document.getElementById("fPekerjaan").value = anak.pekerjaanOrtu;
     document.getElementById("fNikOrtu").value = anak.nikOrtu;
     document.getElementById("fHp").value = anak.hp;
+    document.getElementById("fBB").value = anak.bb;
+    document.getElementById("fTB").value = anak.tb;
 
     // Jika data dari CSV memiliki NIK lengkap, jalankan fungsi penguncian otomatis Dokter
     if (anak.nik && anak.nik.length === 16) {
@@ -1289,7 +1293,9 @@ function executeCsvUpdateFromDashboard() {
                     pekerjaanOrtu: columns[7] ? columns[7].trim() : "-",
                     nikOrtu: columns[8] ? columns[8].trim() : "-",
                     hp: columns[9] ? columns[9].trim() : "-",
-                    kelas: columns[10] ? columns[10].trim() : "-"
+                    kelas: columns[10] ? columns[10].trim() : "-",
+                    tb: columns[11] ? columns[11].trim() : "",
+                    bb: columns[12] ? columns[12].trim() : ""
                 });
             }
         }

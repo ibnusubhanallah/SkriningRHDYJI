@@ -930,6 +930,7 @@ function triggerRectaPrint(id) {
         .mode('A', true, true, true, false)
         .text("Antrian: " + antrian)
         .mode('A', false, false, false, false)
+        .text("(jangan masukan No. Antrian ke MRN)")
         .feed(1)
         .qrcode(16, shownId + "_" + record.namaSingkat)
         .feed(1)
@@ -942,6 +943,7 @@ function triggerRectaPrint(id) {
         .text("Nama: " + record.namaLengkap)
         .text("JK: " + record.jk)
         .text("T. Lahir: " + record.ttl)
+        .text("Pencatatan temuan dapat dilakukan saat/setelah pemeriksaan pada menu Screening & Redflag di rhd.inaheart.or.id")
         .feed(4)
         .print();
 }
@@ -1160,7 +1162,7 @@ async function handlePreRegSearch() {
             div.style.cursor = "pointer";
             div.style.fontSize = "13px";
             div.style.textAlign = "left";
-            div.innerHTML = `<strong>${anak.namaLengkap}</strong> (${anak.jk === "Laki-laki" ? 'L' : 'P'}) <br> <small style="color:#666;">NIK: ${anak.nik || '-'} | NISN: ${anak.nisn || '-'} | TTL: ${anak.ttl}</small>`;
+            div.innerHTML = `<strong>${anak.namaLengkap}</strong> (${anak.jk}) <br> <small style="color:#666;">NIK: ${anak.nik || '-'} | NISN: ${anak.nisn || '-'} | TTL: ${anak.ttl}</small>`;
 
             // Aksi saat item hasil pencarian diklik: Autofill langsung mengisi form!
             div.onclick = function () {
@@ -1251,7 +1253,7 @@ function autofillFormFromPreReg(anak) {
     document.getElementById("fNamaSingkat").value = namaSingkatOtomatis;
     document.getElementById("fNik").value = anak.nik;
     document.getElementById("fNisn").value = anak.nisn;
-    document.getElementById("fNamaLengkap").value = anak.namaLengkap;
+    document.getElementById("fNamaLengkap").value = decodeURI(anak.namaLengkap);
     document.getElementById("fNamaSekolah").value = anak.namaSekolah;
     document.getElementById("fTtl").value = anak.ttl;
     document.getElementById("fJk").value = (anak.jk == "L" ? "Laki-laki" : (anak.jk == "P" ? "Perempuan" : anak.jk));

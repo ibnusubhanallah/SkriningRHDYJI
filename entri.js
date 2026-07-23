@@ -105,6 +105,8 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     const savedRectak = localStorage.getItem("RECTA_KEY");
     const savedPort = localStorage.getItem("RECTA_PORT");
+    document.getElementById("gwAppKey").value = savedRectak || "";
+    document.getElementById("gwAppPort").value = savedPort || "";
     if (savedRectak && savedPort && configSession.modReg) {
         printer = new Recta(savedRectak, savedPort);
         printer.open().catch(() => {
@@ -874,7 +876,20 @@ function closeModal(id) {
     document.getElementById(id).style.display = "none";
 }
 
-function connectPrinter() {
+function connectPrinter(mode = "default") {
+    if(mode != "default") {
+        const key = localStorage.getItem("RECTA_KEY");
+        const port = localStorage.getItem("RECTA_PORT");
+        printer = new Recta(key, port);
+        let result = "gas";
+        printer.open().catch((e) => {
+            printer = null;
+            console.error("🚨 Error Koneksi Printer Recta: " + e.toString());
+            openMainSettingModal();
+            result = "error";
+        });
+        return result;
+    }
     const key = document.getElementById("pRectaKey").value.trim();
     const port = document.getElementById("pRectaPort").value.trim();
     const statusText = document.getElementById("printerStatusText");
@@ -900,7 +915,10 @@ function connectPrinter() {
 
 // Fungsi Trigger Cetak Struk via Recta Host
 function triggerRectaPrint(id) {
-    if (!printer) return; // Abaikan jika printer tidak di-setup
+    if (!printer) {
+        let result = connectPrinter("try");
+        if(result === "error") return; // Abaikan jika printer tidak di-setup
+    }
     const record = masterRecords.find(r => r.id === id);
     if (!record) return;
     let shownId = record.id;

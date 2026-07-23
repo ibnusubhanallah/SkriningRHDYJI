@@ -1219,7 +1219,7 @@ function renderPreRegTableAbsen() {
         const tr = document.createElement("tr");
         tr.style.borderBottom = "1px solid #eee";
 
-        const jkSimbol = anak.jk === "Laki-laki" ? "L" : "P";
+        const jkSimbol = anak.jk// === "Laki-laki" ? "L" : "P";
 
         tr.innerHTML = `
             <td style="padding: 8px; text-align: center; color: #666; min-width: 0px; width: 0px;">${counter}</td>
@@ -1254,13 +1254,13 @@ function autofillFormFromPreReg(anak) {
     document.getElementById("fNamaLengkap").value = anak.namaLengkap;
     document.getElementById("fNamaSekolah").value = anak.namaSekolah;
     document.getElementById("fTtl").value = anak.ttl;
-    document.getElementById("fJk").value = anak.jk;
+    document.getElementById("fJk").value = (anak.jk == "L" ? "Laki-laki" : (anak.jk == "P" ? "Perempuan" : anak.jk));
     document.getElementById("fOrtu").value = anak.ortu;
     document.getElementById("fPekerjaan").value = anak.pekerjaanOrtu;
     document.getElementById("fNikOrtu").value = anak.nikOrtu;
     document.getElementById("fHp").value = anak.hp;
-    document.getElementById("fBB").value = anak.bb;
-    document.getElementById("fTB").value = anak.tb;
+    document.getElementById("fBb").value = anak.bb;
+    document.getElementById("fTb").value = anak.tb;
 
     // Jika data dari CSV memiliki NIK lengkap, jalankan fungsi penguncian otomatis Dokter
     if (anak.nik && anak.nik.length === 16) {

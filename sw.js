@@ -1,4 +1,4 @@
-const CACHE_NAME = 'RHD-YJI-v31-07-2026-1900';
+const CACHE_NAME = 'RHD-YJI-v31-07-2026-1920';
 const ASSETS = [
     './',
     'img/draft flow skrining RHD - regist n antro.jpg',
@@ -20,6 +20,7 @@ const ASSETS = [
     './doctor.js',
     './sop.html',
     './sw.js',
+    './var.js',
 ];
 
 self.addEventListener('install', e => {

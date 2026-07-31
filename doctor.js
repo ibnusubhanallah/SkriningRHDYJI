@@ -387,7 +387,6 @@ async function renderTableRows() {
 }
 
 async function uploadDataToCloud() {
-    GAS_URL = GAS_URL ? GAS_URL : localStorage.getItem("GAS_URL");
     if (!GAS_URL) {
         return alert("🚨 Error: Google Apps Script URL belum dikonfigurasi. Hubungi administrator.");
     }
